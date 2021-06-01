@@ -3,8 +3,8 @@
 '''
 @File    :   func_charset.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/01
-@Version :   1.1.0
+@Time    :   2021/03/12
+@Version :   1.2.0
 @Desc    :   None
 '''
 
@@ -18,10 +18,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 from sqldb.func_basic import row_func  # noqa: E402
 
 
-def row_cor_charset(row, charset_decode='GBK', auto_detect=False):
+def row_cor_charset(
+        row, charset_decode='GBK', charset_encode='latin1', auto_detect=False):
     logging.info('row: %s', row)
     row_cor = row_func(
-        row, charset_correct,
+        row, charset_correct, charset_encode=charset_encode,
         charset_decode=charset_decode, auto_detect=auto_detect)
 
     logging.info('row_cor: %s', row_cor)
@@ -29,16 +30,17 @@ def row_cor_charset(row, charset_decode='GBK', auto_detect=False):
 
 
 def charset_correct(
-        data, datatype, num_now, length, charset_decode, auto_detect):
+        data, datatype, num_now, length,
+        charset_encode, charset_decode, auto_detect):
     logging.debug('data: %s', data)
     if isinstance(data[1], str):
         if auto_detect:
             logging.debug('value_detect: %s', chardet.detect(
-                data[1].encode('latin1')))
-            value_cor = data[1].encode('latin1').decode(
-                chardet.detect(data.encode('latin1'))['encoding'])
+                data[1].encode(charset_encode)))
+            value_cor = data[1].encode(charset_encode).decode(
+                chardet.detect(data.encode(charset_encode))['encoding'])
         else:
-            value_cor = data[1].encode('latin1').decode(charset_decode)
+            value_cor = data[1].encode(charset_encode).decode(charset_decode)
     else:
         value_cor = data[1]
     return (data[0], value_cor)
@@ -58,13 +60,14 @@ if __name__ == '__main__':
                 conn_db='test', conn_charset='utf8') as conn:
             # with conn.cursor(as_dict=True) as cursor:
             with conn.cursor() as cursor:
-                sql = '''SELECT [测试字段1] = '中文', [测试字段2] = 111 '''
+                # sql = '''SELECT [测试字段1] = '中文', [测试字段2] = 111 '''
+                sql = 'SELECT TOP 10 * FROM cizu;'
                 cursor.execute(sql)
-                col = cursor.description
-                logging.info('Columns: %s', col)
                 row = cursor.fetchone()
                 # row = cursor.fetchall()
-                row_cor = row_cor_charset(row)
+                row_cor = row_cor_charset(
+                    row, charset_decode='GBK', charset_encode='utf-8',
+                    auto_detect=True)
     except Exception as e:
         print('Got error {!r}, Errno is {}'.format(e, e.args))
         conn.close()

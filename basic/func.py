@@ -3,8 +3,8 @@
 '''
 @File    :   func.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/01
-@Version :   1.0.0
+@Time    :   2021/03/12
+@Version :   1.2.0
 @Desc    :   None
 '''
 
@@ -28,18 +28,6 @@ def excel_save(org_file, dest_file, encoding='GBK'):
         logging.info("is_file: %s", Path(org_file).is_file())
 
 
-def sql_read(script_file, encoding='utf8'):
-    try:
-        sql = ''
-        with open(str(script_file), encoding=encoding) as f:
-            for line in f.readlines():
-                sql = sql + line
-        logging.info('plaintext: %s', sql)
-        return sql
-    except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
-
-
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
@@ -51,17 +39,6 @@ if __name__ == '__main__':
     # excel_save(
     #     'D:\\zhouzp\\__working__\\_每日跟踪\\_SVN规则更新进度.csv',
     #     'D:\\1.xlsx')
-
-    # testing sql_read()
-    with open(Path.cwd().joinpath('sqlscript\\sql_test.txt'),
-              'a+') as test_file:
-        test_file.seek(0, 0)  # back to the start
-        f = test_file.read()
-        logging.debug(f)
-        if f == '':
-            logging.info('测试文件为空')
-            test_file.write('SELECT 1')
-    sql_read(Path.cwd().joinpath('sqlscript\\sql_test.txt'))
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

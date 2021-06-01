@@ -3,13 +3,28 @@
 '''
 @File    :   func_basic.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/01
-@Version :   1.1.0
+@Time    :   2021/03/12
+@Version :   1.2.0
 @Desc    :   None
 '''
 
 
+import sys
 import logging
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
+
+def sql_read(script_file, encoding='utf8'):
+    try:
+        sql = ''
+        with open(str(script_file), encoding=encoding) as f:
+            for line in f.readlines():
+                sql = sql + line
+        logging.info('plaintext: %s', sql)
+        return sql
+    except Exception as e:
+        print('Got error {!r}, Errno is {}'.format(e, e.args))
 
 
 def row_func(row, func, *args, **kwargs):
@@ -61,7 +76,7 @@ def row_tuple_func(row_tuple, func, *args, **kwargs):
         logging.debug('num: %s', i)
         logging.debug('value: %s', j)
         num_cor, value_cor = func(
-            (None, j), datatype='tuple', num_now=i+1, length=length,
+            (None, j), datatype='tuple', num_now=i + 1, length=length,
             *args, **kwargs)
         logging.debug('value_cor: %s', value_cor)
         row_tuple_cor += (value_cor, )
@@ -78,7 +93,7 @@ def row_dict_func(row_dict, func, *args, **kwargs):
         logging.debug('key: %s', i)
         logging.debug('value: %s', j)
         key_cor, value_cor = func(
-            (i, j), datatype='dict', num_now=num+1, length=length,
+            (i, j), datatype='dict', num_now=num + 1, length=length,
             *args, **kwargs)
         logging.debug('key_cor: %s', key_cor)
         logging.debug('value_cor: %s', value_cor)
@@ -113,6 +128,19 @@ if __name__ == '__main__':
         return basic_data
 
     row_func(row_fecthall_tuple, row_func_test)
+
+    # testing sql_read()
+    from conf_manage import readConf  # noqa: E402
+    cwdPath = Path(readConf()["path"]['cwd'])
+    with open(cwdPath.joinpath('sqlscript\\sql_test.txt'),
+              'a+') as test_file:
+        test_file.seek(0, 0)  # back to the start
+        f = test_file.read()
+        logging.debug(f)
+        if f == '':
+            logging.info('测试文件为空')
+            test_file.write('SELECT 1')
+    sql_read(cwdPath.joinpath('sqlscript\\sql_test.txt'))
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

@@ -9,6 +9,7 @@
 '''
 
 
+import os
 import sys
 import logging
 import pandas as pd
@@ -17,6 +18,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from sqldb.func_basic import row_func  # noqa: E402
+from basic.to_excel import df_to_excel  # noqa: E402
 
 
 def row_to_df(row, col, num_to_str=False, to_file=''):
@@ -47,18 +49,7 @@ def row_to_df(row, col, num_to_str=False, to_file=''):
     logging.info('df_from_row: %s', df)
 
     if to_file:
-        if to_file[::-1].find('.') != -1:
-            to_filetype = to_file[-int(to_file[::-1].find('.')):]
-            to_csvfile = to_file[:-int(to_file[::-1].find('.'))] + 'csv'
-            df.to_csv(to_csvfile, index=False, encoding='utf_8_sig')
-            # to_file = 'D:\\test_todf.xls'
-            if to_filetype in ('xls', 'xlsx'):
-                pe.save_as(
-                    file_name=to_csvfile, dest_file_name=to_file,
-                    encoding='utf_8_sig',
-                    auto_detect_int=bool(1-num_to_str),
-                    auto_detect_float=bool(1-num_to_str)
-                )
+        df_to_excel(df, to_file, num_to_str)
     return df
 
 

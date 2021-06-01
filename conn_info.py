@@ -3,8 +3,8 @@
 '''
 @File    :   conn_info.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/01
-@Version :   1.0.0
+@Time    :   2021/03/25
+@Version :   1.1.0
 @Desc    :   None
 '''
 
@@ -20,6 +20,8 @@ from basic.input_check import input_checking_YN
 from basic.RSA_encrypt import CheckRSAKeys
 from basic.RSA_encrypt import Encrypt
 from basic.RSA_encrypt import Decrypt
+from conf_manage import readConf
+cwdPath = Path(readConf()["path"]['cwd'])
 
 
 def check_conn_info(conn_name, encrypt=False,
@@ -27,9 +29,12 @@ def check_conn_info(conn_name, encrypt=False,
     # encrypt and prepare keys
     if encrypt and not (pubkeyfile and prikeyfile):
         CheckRSAKeys()
+    elif encrypt and not (Path(
+            pubkeyfile).exists() and Path(prikeyfile).exists()):
+        CheckRSAKeys()
 
     # git上传忽略对应文件
-    with open(Path.cwd().joinpath('.gitignore'), 'a+', encoding='utf-8') as f:
+    with open(cwdPath.joinpath('.gitignore'), 'a+', encoding='utf-8') as f:
         rsa_ignore = False
         f.seek(0, 0)  # back to the start
         for i in f.readlines():
@@ -41,7 +46,7 @@ def check_conn_info(conn_name, encrypt=False,
             f.write('\n/gitignore/conn/\n')
 
     # get dict of connection info
-    conn_path = Path.cwd().joinpath('gitignore\\conn')
+    conn_path = cwdPath.joinpath('gitignore\\conn')
     json_path = conn_path.joinpath('conn_info.json')
     connfile_path = conn_path.joinpath(conn_name + '.txt')
     if not conn_path.exists():
@@ -96,7 +101,7 @@ def create_conn_info(conn_name, encrypt=False, pubkeyfile=''):
 
     if input_checking_YN('Save the connection into file?') == 'Y':
         print('Saving connection to ' + conn_name + '.txt')
-        conn_path = Path.cwd().joinpath('gitignore\\conn')
+        conn_path = cwdPath.joinpath('gitignore\\conn')
         connfile_path = conn_path.joinpath(conn_name + '.txt')
         with open(connfile_path, 'w') as file_obj:
             if encrypt and pubkeyfile:
@@ -118,11 +123,11 @@ if __name__ == '__main__':
 
     # conn = check_conn_info()
 
-    pubkeyfile = Path.cwd().joinpath('gitignore\\rsa\\public.pem')
-    prikeyfile = Path.cwd().joinpath('gitignore\\rsa\\private.pem')
+    pubkeyfile = cwdPath.joinpath('gitignore\\rsa\\public.pem')
+    prikeyfile = cwdPath.joinpath('gitignore\\rsa\\private.pem')
     conn = check_conn_info(
-            'localhost', encrypt=True,
-            pubkeyfile=pubkeyfile, prikeyfile=prikeyfile)
+        'localhost', encrypt=True,
+        pubkeyfile=pubkeyfile, prikeyfile=prikeyfile)
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

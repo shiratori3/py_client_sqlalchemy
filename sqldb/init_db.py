@@ -3,8 +3,8 @@
 '''
 @File    :   init_db.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/01
-@Version :   1.0.0
+@Time    :   2021/03/12
+@Version :   1.1.0
 @Desc    :   None
 '''
 
@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from conn_info import check_conn_info  # noqa: E402
-from settings import setting_basic  # noqa: E402
+from conf_manage import readConf  # noqa: E402
 
 
 class Sqldb(object):
@@ -24,10 +24,12 @@ class Sqldb(object):
         self.name = conn_name
 
     def create_conn(self, conn_db='', conn_charset='utf8'):
+        config = readConf()
+        print(config['path']['cwd'])
         conn_info = check_conn_info(
             self.name, encrypt=True,
-            pubkeyfile=setting_basic['pubkeyfile'],
-            prikeyfile=setting_basic['prikeyfile']
+            pubkeyfile=config['RsaKey']['pubkeyfile'],
+            prikeyfile=config['RsaKey']['prikeyfile']
         )
         if not conn_db:
             conn_db = conn_info['database']
@@ -49,22 +51,20 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    from sqldb.func_todf import row_to_df
+    from sqldb.func_query import sql_query
     try:
         with Sqldb('localhost').create_conn(
                 conn_db='test', conn_charset='utf8') as conn:
-            # with conn.cursor() as cursor:
-            with conn.cursor(as_dict=True) as cursor:
-                sql = 'SELECT TOP 500 * FROM cizu;'
-                cursor.execute(sql)
-                # row = cursor.fetchone()
-                row = cursor.fetchall()
-                df = row_to_df(
-                    row, cursor.description,
-                    num_to_str=True, to_file='D:\\test_500.xls')
+            sql = 'SELECT TOP 10 * FROM cizu;'
+            result = sql_query(
+                conn, sql, to_file='D:\\test.xlsx', num_to_str=True,
+                as_dict=True, fetchall=True,
+                charset_cor_de='UTF8', charset_cor_en='UTF8')
     except Exception as e:
         print('Got error {!r}, Errno is {}'.format(e, e.args))
-        conn.close()
+        print(dir())
+        if conn:
+            conn.close()
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

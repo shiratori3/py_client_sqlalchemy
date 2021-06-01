@@ -3,16 +3,21 @@
 '''
 @File    :   RSA_encrypt.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/01
+@Time    :   2021/03/12
 @Version :   1.2.0
 @Desc    :   None
 '''
 
 import os
+import sys
 import logging
 import rsa
 import base64
 from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
+from conf_manage import readConf  # noqa: E402
+cwdPath = Path(readConf()["path"]['cwd'])
 
 
 def CheckRSAKeys(savepath=''):
@@ -21,7 +26,7 @@ def CheckRSAKeys(savepath=''):
         savepath = Path(savepath)
     else:
         print('Error. Unvaild Path. Will save to default path')
-        savepath = Path.cwd().joinpath('gitignore\\rsa')
+        savepath = cwdPath.joinpath('gitignore\\rsa')
     logging.debug(savepath)
     if not Path(savepath).exists():
         Path.mkdir(savepath, parents=True)
@@ -30,12 +35,11 @@ def CheckRSAKeys(savepath=''):
         'pubfile': savepath.joinpath('public.pem'),
         'prifile': savepath.joinpath('private.pem'),
     }
-    if not (kfdict['pubfile'].exists()
-            and kfdict['prifile'].exists()):
+    if not (kfdict['pubfile'].exists() and kfdict['prifile'].exists()):
         kfdict = CreateRSAKeys(savepath)
 
     # git上传忽略对应文件
-    with open(Path.cwd().joinpath('.gitignore'), 'a+', encoding='utf-8') as f:
+    with open(cwdPath.joinpath('.gitignore'), 'a+', encoding='utf-8') as f:
         rsa_ignore = False
         f.seek(0, 0)  # back to the start
         for i in f.readlines():
@@ -132,20 +136,20 @@ if __name__ == '__main__':
     logging.debug('==========================================================')
 
     # create test file
-    with open(Path.cwd().joinpath('rsa_test.txt'), 'a+') as test_file:
+    with open(cwdPath.joinpath('rsa_test.txt'), 'a+') as test_file:
         test_file.seek(0, 0)  # back to the start
         f = test_file.read()
         logging.debug(f)
         if f == '':
             logging.info('测试文件为空')
             test_file.write('abc123456789')
-    datafile = Path.cwd().joinpath('rsa_test.txt')
+    datafile = cwdPath.joinpath('rsa_test.txt')
 
     pubkeyfile, prikeyfile = CheckRSAKeys(
-        Path.cwd().joinpath('gitignore\\rsa'))
+        cwdPath.joinpath('gitignore\\rsa'))
 
-    # datafile_encrypted = Path.cwd().joinpath('rsa_encrypted.txt')
-    # datafile_decrypted = Path.cwd().joinpath('rsa_decrypted.txt')
+    # datafile_encrypted = cwdPath.joinpath('rsa_encrypted.txt')
+    # datafile_decrypted = cwdPath.joinpath('rsa_decrypted.txt')
     # text_encrypted = Encrypt(pubkeyfile, datafile, datafile_encrypted)
     # text_decryed = Decrypt(
     #             prikeyfile, datafile_encrypted, datafile_decrypted)
