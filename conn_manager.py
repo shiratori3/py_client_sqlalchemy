@@ -4,7 +4,7 @@
 @File    :   conn_manager.py
 @Author  :   Billy Zhou
 @Time    :   2021/06/14
-@Version :   0.5.0
+@Version :   0.9.0
 @Desc    :   None
 '''
 
@@ -30,6 +30,15 @@ cwdPath = Path(readConf()["path"]['cwd'])
 def conn_manager(
         handle_type='read',
         conn_path=cwdPath.joinpath('gitignore\\conn')):
+    # read json file of connections
+    json_dict = manage_conn_json('READ', conn_path=conn_path)
+    if json_dict:
+        conn_list = [name for name, path in json_dict.items()]
+        conn_list_str = '"' + '",  "'.join(conn_list) + '"'
+        print('Existed connections: ' + conn_list_str)
+    else:
+        print('No existing connection.')
+
     handle_list = ['read', 'add', 'update', 'delete', 'clear', 'rename']
     if handle_type.upper() not in [i.upper() for i in handle_list]:
         print('Invaild handle_type. Using the default handle_list.')
@@ -37,95 +46,139 @@ def conn_manager(
     else:
         selection = handle_type.upper()
 
-    if selection in ['READ', 'ADD', 'UPDATE']:
-        json_dict = manage_conn_json(conn_path=conn_path)
-        if json_dict:
-            conn_list = [name for name, path in json_dict.items()]
-        else:
-            print('No exist vaild connection info.')
-        if conn_list and selection == 'READ':
-            conn_name_selected = input_checking_list(conn_list, 'Please choose connection to read.')
-        elif conn_list and selection == 'UPDATE':
-            conn_name_selected = input_checking_list(conn_list, 'Please choose connection to update.')
-        else:
-            conn_name_selected = input_default('localhost', 'Please input the connection name to add.')
-        conn_info = manage_conn_info(handle_type=selection, conn_name=conn_name_selected)
+    if selection in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME']:
+        if not conn_list or selection == 'ADD':
+            if selection != 'ADD':
+                tip_words = 'No existing connection to ' + selection + '. Add a new one?'
+                selection_add = input_checking_YN(tip_words)
+                if selection_add == 'Y':
+                    selection = 'ADD'
+                else:
+                    print('Canceled.')
+                    selection = 'PASS'
 
-        if selection == 'READ':
+            if selection == 'ADD':
+                conn_name_selected = input_default('localhost', 'Please input the connection name to ADD.')
+                # check exist or not
+                if conn_list and conn_name_selected in conn_list:
+                    tip_words = conn_name_selected + 'already existed. Update it?'
+                    selection_update = input_checking_YN(tip_words)
+                    if selection_update == 'Y':
+                        selection = 'UPDATE'
+                    else:
+                        print('Canceled.')
+                        selection = 'PASS'
+        else:
+            tip_words = 'Please choose the connection to ' + selection + '.'
+            conn_name_selected = input_checking_list(conn_list, tip_words)
+
+        conn_info = manage_conn_info(
+            handle_type=selection, json_dict=json_dict,
+            conn_name=conn_name_selected, conn_path=conn_path)
+        if conn_info and selection == 'READ':
             print('conn_info: %s' % conn_info)
-    elif selection == 'DELETE':
-        pass
     elif selection == 'CLEAR':
-        pass
-    elif selection == 'RENAME':
         pass
 
 
 def manage_conn_json(
-        handle_type='READ', conn_name='',
-        conn_path=cwdPath.joinpath('gitignore\\conn'),
-        json_dict_updated={}):
+        handle_type, conn_path,
+        conn_name='', json_dict_updated={}):
+    # handle_type in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME']
+    # get dict of connection info
     if not Path(conn_path).is_dir():
         conn_path = cwdPath.joinpath('gitignore\\conn')
         print('Unvaild conn_path. Using the default path(' + str(conn_path) + ').')
         if not Path(conn_path).exists():
             Path.mkdir(conn_path, parents=True)
-    json_dict = {}
-
-    # get dict of connection info
     json_path = conn_path.joinpath('conn_info.json')
+    json_dict = {}
     if not json_path.exists():
         with open(json_path, 'w') as f:
             json.dump({}, f)
-    with open(json_path) as f:
-        data = f.read()
-        if data:
-            json_dict = json.loads(data)
-
-    if json_dict_updated and handle_type in ('WRITE', 'UPDATE'):
-        if handle_type == 'UPDATE':
+    if handle_type == 'READ':
+        with open(json_path) as f:
+            data = f.read()
+            if data:
+                json_dict = json.loads(data)
+        logging.debug(json_dict)
+        return json_dict
+    else:
+        if handle_type == 'ADD':
+            print('Connection[%s] added.' % conn_name)
+        elif handle_type == 'RENAME':
+            # rename
+            tip_words = 'Please input the NEW name for connection[{0}].'.format(conn_name)
+            conn_renamed = input_default('localhost', tip_words)
+            while set([conn_renamed]) & set([name for name, path in json_dict_updated.items()]):
+                print('The NEW name[%s] already USED. Please input again.' % conn_renamed)
+                conn_renamed = input_default('localhost', tip_words)
+            # rename the txt file of conn_name
+            conn_name_filepath = Path(json_dict_updated[conn_name]).resolve()
+            conn_renamed_filepath = Path(conn_name_filepath).joinpath(conn_renamed + '.txt')
+            Path(json_dict_updated[conn_name]).rename(conn_renamed_filepath)
+            # update dict
+            json_dict_updated.pop(conn_name)
+            json_dict_updated[conn_renamed] = conn_renamed_filepath
+            print('Connection[{0}] renamed to {1}.'.format(conn_name, conn_renamed))
+        elif handle_type == 'UPDATE':
             json_dict_updated = dict_compare(
                 json_dict, json_dict_updated, diff_autoadd=True)
+            print('Connection[%s] updated.' % conn_name)
+        elif handle_type == 'DELETE':
+            if json_dict_updated[conn_name].exists():
+                Path(json_dict_updated[conn_name]).unlink
+                json_dict_updated.pop(conn_name)
+            else:
+                print('The file of connection[%s] not exist. Drop it.' % conn_name)
+                json_dict_updated.pop(conn_name)
+            print('Connection[%s] deleted.' % conn_name)
+
         with open(json_path, 'w') as f:
             json.dump(json_dict_updated, f)
-    elif handle_type == 'DELETE':
-        pass
-    elif handle_type == 'RENAME':
-        pass
 
-    logging.debug(json_dict)
-    return json_dict
+        logging.debug(json_dict_updated)
+        return json_dict_updated
 
 
 def manage_conn_info(
-        handle_type='READ', conn_name='',
-        conn_path=cwdPath.joinpath('gitignore\\conn'),
+        handle_type, json_dict, conn_name, conn_path,
         encrypt=True):
-    add_gitignore('/gitignore/conn/', under_gitignore=True)
-    pubkeyfile, prikeyfile = CheckRSAKeys(encrypt)
-
-    # get dict of connection info
-    json_dict = manage_conn_json(conn_path=conn_path)
-
-    # connection called conn_name exist or not
-    if not json_dict.get(conn_name):
-        print('Connection not exist. Creating a new connection')
-        conn_info = create_conn_info(conn_name, conn_path, json_dict, encrypt, pubkeyfile)
+    # handle_type in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME', 'PASS']
+    if handle_type == 'PASS':
+        return False
     else:
-        print('Opening existing connection.')
-        with open(json_dict[conn_name]) as file_obj:
-            if encrypt and prikeyfile:
-                data = Decrypt(prikeyfile, file_obj.read())
-            else:
-                data = file_obj.read()
-        logging.debug('data: %s', data)
-        conn_info = json.loads(data)
+        add_gitignore('/gitignore/conn/', under_gitignore=True)
+        pubkeyfile, prikeyfile = CheckRSAKeys(encrypt)
+        json_dict_readed = json_dict
 
-    manage_conn_json(
-        'WRITE', conn_path=conn_path, json_dict_updated=json_dict)
+        # connection called conn_name exist or not
+        if handle_type in ['ADD'] and not json_dict.get(conn_name):
+            print('Connection[%s] not existed. Creating a new connection.' % conn_name)
+            conn_info = create_conn_info(
+                conn_name, conn_path, json_dict_readed, encrypt, pubkeyfile)
+        else:
+            if handle_type in ['UPDATE']:
+                print('Updating existing connection[%s].' % conn_name)
+                conn_info = create_conn_info(
+                    conn_name, conn_path, json_dict_readed, encrypt, pubkeyfile)
+            elif handle_type in ['READ']:
+                print('Reading existing connection[%s].' % conn_name)
+                with open(json_dict[conn_name]) as file_obj:
+                    if encrypt and prikeyfile:
+                        data = Decrypt(prikeyfile, file_obj.read())
+                    else:
+                        data = file_obj.read()
+                logging.debug('data: %s', data)
+                conn_info = json.loads(data)
 
-    logging.debug(conn_info)
-    return conn_info
+        if handle_type in ['ADD', 'UPDATE', 'DELETE', 'RENAME']:
+            manage_conn_json(
+                handle_type, conn_path=conn_path, conn_name=conn_name,
+                json_dict_updated=json_dict_readed)
+
+        logging.debug(conn_info)
+        return conn_info
 
 
 def create_conn_info(conn_name, conn_path, json_dict, encrypt=False, pubkeyfile=''):
