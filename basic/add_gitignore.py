@@ -4,7 +4,7 @@
 @File    :   add_gitignore.py
 @Author  :   Billy Zhou
 @Time    :   2021/06/14
-@Version :   0.0.0
+@Version :   1.0.0
 @Desc    :   None
 '''
 

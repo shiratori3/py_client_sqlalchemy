@@ -9,11 +9,9 @@
 '''
 
 
-import os
 import sys
 import logging
 import pandas as pd
-import pyexcel as pe
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 

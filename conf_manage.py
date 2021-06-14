@@ -3,8 +3,8 @@
 '''
 @File    :   conf_manage.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/26
-@Version :   1.1.0
+@Time    :   2021/06/14
+@Version :   1.3.0
 @Desc    :   None
 '''
 
@@ -12,17 +12,27 @@
 import os
 import logging
 import configparser
-from settings import basic_path
-from settings import conf_filename
-from settings import conf_dict_init
+from pathlib import Path
+from basic.input_check import input_checking_YN
+
+
+def confInit():
+    basic_path = Path(os.path.abspath(os.path.dirname(__file__)))
+    return {
+        'path': {
+            'cwd': basic_path,
+            'conffile': Path(basic_path).joinpath('settings.conf'),
+        },
+    }
 
 
 def readConf(
-        conf_path=basic_path, conf_fname=conf_filename,
-        check_dict='', CaseSens=True):
+        conf_path=confInit()['path']['cwd'],
+        conf_fname=confInit()['path']['conffile'].parts[-1],
+        dict_for_checking='', CaseSens=True):
     """
     读取conf_path下的conf_fname配置文件
-    可与check_dict进行比对并合并
+    可与dict_for_checking进行比对并合并
     """
     conf = configparser.ConfigParser()
     if CaseSens:
@@ -30,7 +40,7 @@ def readConf(
         conf.optionxform = str
     conf_filepath = str(conf_path.joinpath(conf_fname))
 
-    if not check_dict:
+    if not dict_for_checking:
         """
         非比对模式：
         存在conf_path下的conf_fname文件则读取，否则写入settings中的conf_dict_init
@@ -38,20 +48,20 @@ def readConf(
         if os.path.exists(conf_filepath):
             conf.read(conf_filepath)
         else:
-            writeConf(conf_path, conf_dict_init, conf_fname, CaseSens)
+            writeConf(conf_path, confInit(), conf_fname, CaseSens)
             conf.read(conf_filepath)
         return conf2dict(conf)
     else:
         """
         比对模式：
-        存在conf_path下的conf_fname文件至conf_read则读取，否则conf_read留空。
-        将check_dict与conf_read进行比对并合并，最终更新至conf_path下的conf_fname
+        存在conf_path下的conf_fname文件至conf_dict_readed则读取，否则conf_dict_readed留空。
+        将dict_for_checking与conf_dict_readed进行比对并合并，最终更新至conf_path下的conf_fname
         """
-        conf_read = {}
+        conf_dict_readed = {}
         if os.path.exists(conf_filepath):
             conf.read(conf_filepath)
-            conf_read = conf2dict(conf)
-        conf_dict_checked = conf_dict_check(conf_read, check_dict)
+            conf_dict_readed = conf2dict(conf)
+        conf_dict_checked = dict_compare(conf_dict_readed, dict_for_checking)
         writeConf(conf_path, conf_dict_checked, conf_fname, CaseSens)
     return conf_dict_checked
 
@@ -87,45 +97,90 @@ def conf2dict(config):
     return dictionary
 
 
-def conf_dict_check(dict_uncheck, check_dict):
+def dict_compare(dict_uncheck, dict_for_checking, diff_autoadd=True):
     """
-    比较dict_uncheck与check_dict并把缺失项合并至dict_uncheck
+    比较dict_uncheck与dict_for_checking并把缺失项合并至dict_uncheck
     """
     dict_checked = dict_uncheck
-    dict_compare = check_dict
     if not dict_uncheck:
-        # if {} then merge all
-        dict_checked = check_dict
+        if diff_autoadd:
+            # missing all
+            dict_checked = dict_for_checking
+        else:
+            selection = input_checking_YN('dict_uncheck is blank. Replace it with dict_for_checking?')
+            if selection == 'Y':
+                dict_checked = dict_for_checking
+            else:
+                print('Canceled.')
     else:
-        # merge missing
-        for session, options_dict in check_dict.items():
-            if session != 'compare_lvl':
-                dict_check(
-                    dict_uncheck, dict_compare, dict_checked,
-                    session, options_dict, check_dict['compare_lvl'])
+        # check sessions
+        for session, options_dict in dict_for_checking.items():
+            dict_session_compare(
+                dict_uncheck, dict_for_checking, dict_checked,
+                session, diff_autoadd)
     return dict_checked
 
 
-def dict_check(
-        dict_uncheck, dict_compare, dict_checked, session, options_dict, compare_lvl_dict):
+def dict_session_compare(
+        dict_uncheck, dict_for_checking, dict_checked, session, diff_autoadd):
     if not dict_uncheck.get(session):
-        dict_checked = dict(dict_uncheck, **dict_compare)
-    else:
-        for option, compare_lvl in options_dict.items():
-            compare_path = session + '_' + option
-            if not dict_uncheck[session].get(option):
-                # merge the missing part to dict_uncheck
-                dict_checked[session] = dict(
-                    dict_uncheck[session], **dict_compare[session])
+        # missing session
+        if diff_autoadd:
+            dict_checked[session] = dict_for_checking[session]
+        else:
+            tip_words = 'dict_uncheck[{0}] is missing. Add it with dict_for_checking[{0}]?'.format(session)
+            selection = input_checking_YN(tip_words)
+            if selection == 'Y':
+                dict_checked[session] = dict_for_checking[session]
             else:
-                # replace value or only check path exists or not
-                if compare_lvl_dict.get(compare_path):
-                    if compare_lvl_dict[compare_path] == 'equal':
-                        if dict_uncheck[session][option] != str(dict_compare[session][option]):
-                            dict_checked[session][option] = str(dict_compare[session][option])
-                    elif compare_lvl_dict[compare_path] == 'exist':
-                        if not os.path.exists(dict_uncheck[session][option]):
-                            dict_checked[session][option] = str(dict_compare[session][option])
+                print('Canceled.')
+    else:
+        if type(dict_uncheck[session]) == dict:
+            # option_dict exist
+            for option, value in dict_uncheck[session].items():
+                dict_option_compare(
+                    dict_uncheck, dict_for_checking, dict_checked,
+                    session, option, diff_autoadd)
+        else:
+            # option_dict not exist, compare value
+            if dict_uncheck[session] != str(dict_for_checking[session]):
+                print('Values diff between dict_uncheck[{0}] and dict_for_checking[{0}].'.format(session))
+                print('Value of dict_uncheck[{0}]: {1}'.format(session, dict_uncheck[session]))
+                print('Value of dict_for_checking[{0}]: {1}'.format(session, dict_for_checking[session]))
+                tip_words = 'Replace the value of dict_uncheck[{0}] with dict_for_checking[{0}]?'.format(session)
+                selection = input_checking_YN(tip_words)
+                if selection == 'Y':
+                    dict_checked[session] = str(dict_for_checking[session])
+                else:
+                    print('Canceled.')
+
+
+def dict_option_compare(
+        dict_uncheck, dict_for_checking, dict_checked, session, option, diff_autoadd):
+    if not dict_uncheck[session].get(option):
+        # missing option
+        if diff_autoadd:
+            dict_checked[session][option] = dict_for_checking[session][option]
+        else:
+            tip_words = 'dict_uncheck[{0}][{1}] is missing. Add it with dict_for_checking[{0}][{1}]?'.format(
+                session, option)
+            selection = input_checking_YN(tip_words)
+            if selection == 'Y':
+                dict_checked[session][option] = dict_for_checking[session][option]
+            else:
+                print('Canceled.')
+    else:
+        # compare value
+        if dict_uncheck[session][option] != str(dict_for_checking[session][option]):
+            print('Values diff between dict_uncheck[{0}][{1}] and dict_for_checking[{0}][{1}].'.format(session, option))
+            print('Value of dict_uncheck[{0}][{1}]: {2}'.format(session, option, dict_uncheck[session][option]))
+            print('Value of dict_for_checking[{0}][{1}]: {2}'.format(session, option, dict_for_checking[session][option]))
+            tip_words = 'Replace the value of dict_uncheck[{0}][{1}] with dict_for_checking[{0}][{1}]?'.format(session, option)
+            selection = input_checking_YN(tip_words)
+            if selection == 'Y':
+                dict_checked[session][option] = str(dict_for_checking[session][option])
+            else:
+                print('Canceled.')
 
 
 if __name__ == '__main__':
@@ -138,7 +193,8 @@ if __name__ == '__main__':
 
     conf_dict = readConf()
     logging.info('config: %s', conf_dict)
-    logging.info('config["path"]: %s', conf_dict["path"])
+    logging.info('config["path"]["cwd"]: %s', conf_dict['path']['cwd'])
+    logging.info('config["path"]["conffile"]: %s', conf_dict['path']['conffile'])
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

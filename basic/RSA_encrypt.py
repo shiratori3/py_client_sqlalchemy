@@ -3,8 +3,8 @@
 '''
 @File    :   RSA_encrypt.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/12
-@Version :   1.2.0
+@Time    :   2021/06/14
+@Version :   1.3.0
 @Desc    :   None
 '''
 
