@@ -13,7 +13,8 @@ import logging
 import getpass
 
 
-def input_default(input_data, default_word=''):
+def input_default(default_word='', tip_words='Please input words.'):
+    input_data = input(tip_words + '(default: ' + default_word + ')\n')
     if input_data.strip() == '':
         print('Blank input. Using the default value: {0}'.format(default_word))
         return default_word
@@ -40,15 +41,15 @@ def input_checking_list(input_list, tip_words='Please input words.', case_sens=F
     tip_words = tip_words + '(' + input_list_str + '): '
 
     if case_sens:
-        input_value = input_default(input(tip_words), default_value)
+        input_value = input_default(default_value, tip_words)
         while not (set([input_value]) & set(input_list)):
             print('Unexpect input! Please input words in ' + input_list_str + '.')
-            input_value = input_default(input(tip_words), default_value)
+            input_value = input_default(default_value, tip_words)
     else:
-        input_value = input_default(input(tip_words), default_value.upper()).upper()
+        input_value = input_default(default_value.upper(), tip_words).upper()
         while not (set([input_value]) & set([i.upper() for i in input_list])):
             print('Unexpect input! Please input words in ' + input_list_str + '.')
-            input_value = input_default(input(tip_words), default_value.upper()).upper()
+            input_value = input_default(default_value.upper(), tip_words).upper()
 
     return input_value
 
@@ -65,10 +66,10 @@ if __name__ == "__main__":
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    # logging.info(input_default(input(), 'abc'))
+    # logging.info(input_default('abc'))
     # logging.info(input_pwd())
     # logging.info(input_checking_YN())
-    logging.info(input_checking_list(['a', 'b', 'c', 'd']))
+    # logging.info(input_checking_list(['a', 'b', 'c', 'd']))
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')
