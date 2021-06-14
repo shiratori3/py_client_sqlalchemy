@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 
+from basic.add_gitignore import add_gitignore
 from basic.input_check import input_default
 from basic.input_check import input_pwd
 from basic.input_check import input_checking_YN
@@ -26,24 +27,8 @@ cwdPath = Path(readConf()["path"]['cwd'])
 
 def check_conn_info(conn_name, encrypt=False,
                     pubkeyfile='', prikeyfile=''):
-    # encrypt and prepare keys
-    if encrypt and not (pubkeyfile and prikeyfile):
-        CheckRSAKeys()
-    elif encrypt and not (Path(
-            pubkeyfile).exists() and Path(prikeyfile).exists()):
-        CheckRSAKeys()
-
-    # git上传忽略对应文件
-    with open(cwdPath.joinpath('.gitignore'), 'a+', encoding='utf-8') as f:
-        rsa_ignore = False
-        f.seek(0, 0)  # back to the start
-        for i in f.readlines():
-            logging.debug(i.replace('\n', ''))
-            if i.replace('\n', '') in ['/gitignore/', '/gitignore/conn/']:
-                rsa_ignore = True
-                break
-        if not rsa_ignore:
-            f.write('\n/gitignore/conn/\n')
+    add_gitignore('/gitignore/conn/', under_gitignore=True)
+    pubkeyfile, prikeyfile = CheckRSAKeys(encrypt)
 
     # get dict of connection info
     conn_path = cwdPath.joinpath('gitignore\\conn')

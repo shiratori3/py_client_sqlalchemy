@@ -16,40 +16,30 @@ import base64
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
+from basic.add_gitignore import add_gitignore  # noqa: E402
 from conf_manage import readConf  # noqa: E402
 cwdPath = Path(readConf()["path"]['cwd'])
 
 
-def CheckRSAKeys(savepath=''):
-    # 对应文件夹是否存在
-    if Path(savepath) != Path('') and Path(savepath).is_dir():
-        savepath = Path(savepath)
+def CheckRSAKeys(encrypt=True, savepath=cwdPath.joinpath('gitignore\\rsa')):
+    add_gitignore('/gitignore/rsa/', under_gitignore=True)
+
+    if encrypt:
+        if not Path(savepath).is_dir():
+            savepath = cwdPath.joinpath('gitignore\\rsa')
+            print('Unvaild savepath. Save to default path(' + str(savepath) + ').')
+            if not Path(savepath).exists():
+                Path.mkdir(savepath, parents=True)
+
+        pubkeyfile = Path(savepath).joinpath('public.pem')
+        prikeyfile = Path(savepath).joinpath('private.pem')
+        if not (Path(pubkeyfile).exists() and Path(prikeyfile).exists()):
+            print('Keyfiles unfound. Creating under path(' + str(savepath) + ').')
+            pubkeyfile, prikeyfile = CreateRSAKeys(savepath)
+
+        return pubkeyfile, prikeyfile
     else:
-        print('Error. Unvaild Path. Will save to default path')
-        savepath = cwdPath.joinpath('gitignore\\rsa')
-    logging.debug(savepath)
-    if not Path(savepath).exists():
-        Path.mkdir(savepath, parents=True)
-
-    kfdict = {
-        'pubfile': savepath.joinpath('public.pem'),
-        'prifile': savepath.joinpath('private.pem'),
-    }
-    if not (kfdict['pubfile'].exists() and kfdict['prifile'].exists()):
-        kfdict = CreateRSAKeys(savepath)
-
-    # git上传忽略对应文件
-    with open(cwdPath.joinpath('.gitignore'), 'a+', encoding='utf-8') as f:
-        rsa_ignore = False
-        f.seek(0, 0)  # back to the start
-        for i in f.readlines():
-            logging.debug(i.replace('\n', ''))
-            if i.replace('\n', '') in ['/gitignore/', '/gitignore/rsa/']:
-                rsa_ignore = True
-                break
-        if not rsa_ignore:
-            f.write('\n/gitignore/rsa/\n')
-    return kfdict['pubfile'], kfdict['prifile']
+        return '', ''
 
 
 def CreateRSAKeys(savepath):
@@ -64,10 +54,7 @@ def CreateRSAKeys(savepath):
         logging.debug(type(privkey.save_pkcs1()))
         prifile.write(privkey.save_pkcs1().decode('utf-8'))
 
-    return {
-        'pubfile': savepath.joinpath('public.pem'),
-        'prifile': savepath.joinpath('private.pem'),
-    }
+    return savepath.joinpath('public.pem'), savepath.joinpath('private.pem')
 
 
 def Encrypt(pubkeyfile, data, savefile=''):
@@ -145,8 +132,8 @@ if __name__ == '__main__':
             test_file.write('abc123456789')
     datafile = cwdPath.joinpath('rsa_test.txt')
 
-    pubkeyfile, prikeyfile = CheckRSAKeys(
-        cwdPath.joinpath('gitignore\\rsa'))
+    pubkeyfile, prikeyfile = CheckRSAKeys()
+    # pubkeyfile, prikeyfile = CheckRSAKeys(True, 'rsa')
 
     # datafile_encrypted = cwdPath.joinpath('rsa_encrypted.txt')
     # datafile_decrypted = cwdPath.joinpath('rsa_decrypted.txt')
