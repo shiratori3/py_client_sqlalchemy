@@ -28,14 +28,24 @@ cwdPath = Path(readConf()["path"]['cwd'])
 
 
 def conn_manager(
-        handle_type='',
-        conn_path=cwdPath.joinpath('gitignore\\conn')):
+        handle_type='', conn_name='',
+        conn_path=cwdPath.joinpath('gitignore\\conn'),
+        encrypt=True):
+    # init
+    conn_name_default = 'NewConnection'
+    if conn_name:
+        conn_name_default = conn_name
+
     # read json file of connections
     json_dict = manage_conn_json('READ', conn_path=conn_path)
     if json_dict:
         conn_list = [name for name, path in json_dict.items()]
         conn_list_str = '"' + '",  "'.join(conn_list) + '"'
         print('Existed connections: ' + conn_list_str)
+        if conn_name and conn_name in conn_list:
+            conn_name_selected = conn_name_default
+        elif conn_name:
+            print('Unvaild connection[%s] inputed.' % conn_name)
     else:
         conn_list = []
         conn_name_selected = ''
@@ -60,7 +70,7 @@ def conn_manager(
                     selection = 'PASS'
 
             if selection == 'ADD':
-                conn_name_selected = input_default('localhost', 'Please input the connection name to ADD.')
+                conn_name_selected = input_default(conn_name_default, 'Please input the connection name to ADD.')
                 # check exist or not
                 if conn_list and conn_name_selected in conn_list:
                     tip_words = 'Connection[{0}] already existed. Update it?'.format(conn_name_selected)
@@ -71,14 +81,16 @@ def conn_manager(
                         print('Canceled.')
                         selection = 'PASS'
         else:
-            tip_words = 'Please choose the connection to ' + selection + '.'
-            conn_name_selected = input_checking_list(conn_list, tip_words, case_sens=True)
+            if not (selection == 'READ' and conn_name_selected):
+                tip_words = 'Please choose the connection to ' + selection + '.'
+                conn_name_selected = input_checking_list(conn_list, tip_words, case_sens=True)
 
         conn_info = manage_conn_info(
             handle_type=selection, json_dict=json_dict,
-            conn_name=conn_name_selected, conn_path=conn_path)
-        if conn_info and selection == 'READ':
-            print('conn_info: %s' % conn_info)
+            conn_name=conn_name_selected, conn_path=conn_path, encrypt=encrypt)
+        if conn_info and selection in ['READ', 'ADD', 'UPDATE']:
+            if selection in ['READ']:
+                print('conn_info: %s' % conn_info)
             return conn_info
     elif selection == 'CLEAR':
         tip_words = 'Attension! This will delete all existing connections. Are you sure?'
@@ -88,7 +100,7 @@ def conn_manager(
             for conn_name_selected in conn_list:
                 conn_info = manage_conn_info(
                     handle_type=selection, json_dict=json_dict,
-                    conn_name=conn_name_selected, conn_path=conn_path)
+                    conn_name=conn_name_selected, conn_path=conn_path, encrypt=encrypt)
             print('Cleared.')
         else:
             print('Canceled.')
