@@ -27,14 +27,14 @@ def CheckRSAKeys(encrypt=True, savepath=cwdPath.joinpath('gitignore\\rsa')):
     if encrypt:
         if not Path(savepath).is_dir():
             savepath = cwdPath.joinpath('gitignore\\rsa')
-            print('Unvaild savepath. Save to default path(' + str(savepath) + ').')
+            logging.warning('Unvaild savepath. Save to default path(' + str(savepath) + ').')
             if not Path(savepath).exists():
                 Path.mkdir(savepath, parents=True)
 
         pubkeyfile = Path(savepath).joinpath('public.pem')
         prikeyfile = Path(savepath).joinpath('private.pem')
         if not (Path(pubkeyfile).exists() and Path(prikeyfile).exists()):
-            print('Keyfiles unfound. Creating under path(' + str(savepath) + ').')
+            logging.warning('Keyfiles unfound. Creating under path(' + str(savepath) + ').')
             pubkeyfile, prikeyfile = CreateRSAKeys(savepath)
 
         return pubkeyfile, prikeyfile
@@ -44,7 +44,7 @@ def CheckRSAKeys(encrypt=True, savepath=cwdPath.joinpath('gitignore\\rsa')):
 
 def CreateRSAKeys(savepath):
     # 先生成一对密钥，然后保存.pem格式文件
-    print('Creating RSA keys.')
+    logging.info('Creating RSA keys.')
     (pubkey, privkey) = rsa.newkeys(2048)
 
     with open(savepath.joinpath('public.pem'), 'w+') as pubfile:

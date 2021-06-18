@@ -50,10 +50,10 @@ if __name__ == '__main__':
 
     usr_path = os.path.expanduser('~')
     filepath = Path(os.path.expanduser('~')).joinpath('.ipython\profile_default\startup')
-    print('path_to_put: {0}'.format(filepath))
+    logging.info('path_to_put: {0}'.format(filepath))
 
-    print('dir: {0}'.format(dir()))
-    print('globals: {0}'.format(globals()))
+    logging.info('dir: {0}'.format(dir()))
+    logging.info('globals: {0}'.format(globals()))
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

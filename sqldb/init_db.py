@@ -4,7 +4,7 @@
 @File    :   init_db.py
 @Author  :   Billy Zhou
 @Time    :   2021/06/15
-@Version :   1.2.0
+@Version :   1.2.1
 @Desc    :   None
 '''
 
@@ -23,21 +23,36 @@ class Sqldb(object):
     def __init__(self, conn_name):
         self.name = conn_name
 
-    def create_conn(self, conn_db='', conn_charset='utf8'):
-        conn_info = conn_manager(
-            'READ', conn_name=self.name,
-            conn_path=Path(readConf()["path"]['cwd']).joinpath('gitignore\\conn'),
-            encrypt=True
-        )
-        if not conn_db:
-            conn_db = conn_info['database']
-        self.conn = pymssql.connect(
-            host=conn_info['host'],
-            database=conn_db,
-            user=conn_info['user'],
-            password=conn_info['pwd'],
-            charset=conn_charset
-        )
+    def create_conn(self, conn_db='', conn_charset='utf8', try_max=3):
+        try_time = 0
+        self.conn = False
+        while not self.conn and try_time <= try_max:
+            try:
+                try_time += 1
+                conn_info = conn_manager(
+                    'READ', conn_name=self.name,
+                    conn_path=Path(readConf()["path"]['cwd']).joinpath('gitignore\\conn'),
+                    encrypt=True
+                )
+                if not conn_db:
+                    conn_db = conn_info['database']
+                self.conn = pymssql.connect(
+                    host=conn_info['host'],
+                    database=conn_db,
+                    user=conn_info['user'],
+                    password=conn_info['pwd'],
+                    charset=conn_charset
+                )
+            except Exception as e:
+                logging.debug("An error occurred. {}".format(e.args[-1]))
+                logging.error('Login failed. Delete error connection.')
+                conn_info = conn_manager(
+                    'DELETE', conn_name=self.name,
+                    conn_path=Path(readConf()["path"]['cwd']).joinpath('gitignore\\conn'),
+                    encrypt=True
+                )
+                if try_time > try_max:
+                    logging.error('Login failed too much time. Stop trying.')
         return self.conn
 
 
@@ -59,8 +74,8 @@ if __name__ == '__main__':
                 as_dict=True, fetchall=True,
                 charset_cor_de='UTF8', charset_cor_en='UTF8')
     except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
-        if conn:
+        logging.debug("An error occurred. {}".format(e.args[-1]))
+        if 'conn' in dir():
             conn.close()
 
     logging.debug('==========================================================')

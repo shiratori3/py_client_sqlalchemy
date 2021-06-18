@@ -60,8 +60,9 @@ if __name__ == '__main__':
                 charset_cor_de='GBK', charset_cor_en='latin1',
                 charset_detect=False)
     except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
-        conn.close()
+        logging.debug("An error occurred. {}".format(e.args[-1]))
+        if 'conn' in dir():
+            conn.close()
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

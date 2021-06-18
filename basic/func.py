@@ -20,10 +20,10 @@ def excel_save(org_file, dest_file, encoding='GBK'):
             file_name=org_file,
             dest_file_name=dest_file,
             encoding=encoding)
-        print("Convert the file: " + org_file)
-        print("            into: " + dest_file)
+        logging.info("Convert the file: " + org_file)
+        logging.info("            into: " + dest_file)
     except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
+        logging.debug("An error occurred. {}".format(e.args[-1]))
         logging.info("exists: %s", Path(org_file).exists())
         logging.info("is_file: %s", Path(org_file).is_file())
 

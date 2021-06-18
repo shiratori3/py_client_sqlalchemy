@@ -111,7 +111,7 @@ def dict_compare(dict_uncheck, dict_for_checking, diff_autoadd=True):
             if selection == 'Y':
                 dict_checked = dict_for_checking
             else:
-                print('Canceled.')
+                logging.info('Canceled.')
     else:
         # check sessions
         for session, options_dict in dict_for_checking.items():
@@ -133,7 +133,7 @@ def dict_session_compare(
             if selection == 'Y':
                 dict_checked[session] = dict_for_checking[session]
             else:
-                print('Canceled.')
+                logging.info('Canceled.')
     else:
         if type(dict_uncheck[session]) == dict:
             # option_dict exist
@@ -152,7 +152,7 @@ def dict_session_compare(
                 if selection == 'Y':
                     dict_checked[session] = str(dict_for_checking[session])
                 else:
-                    print('Canceled.')
+                    logging.info('Canceled.')
 
 
 def dict_option_compare(
@@ -168,7 +168,7 @@ def dict_option_compare(
             if selection == 'Y':
                 dict_checked[session][option] = dict_for_checking[session][option]
             else:
-                print('Canceled.')
+                logging.info('Canceled.')
     else:
         # compare value
         if dict_uncheck[session][option] != str(dict_for_checking[session][option]):
@@ -180,7 +180,7 @@ def dict_option_compare(
             if selection == 'Y':
                 dict_checked[session][option] = str(dict_for_checking[session][option])
             else:
-                print('Canceled.')
+                logging.info('Canceled.')
 
 
 if __name__ == '__main__':

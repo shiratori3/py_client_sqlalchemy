@@ -20,12 +20,12 @@ from sqldb.func_basic import row_func  # noqa: E402
 
 def row_cor_charset(
         row, charset_decode='GBK', charset_encode='latin1', auto_detect=False):
-    logging.info('row: %s', row)
+    logging.debug('row: %s', row)
     row_cor = row_func(
         row, charset_correct, charset_encode=charset_encode,
         charset_decode=charset_decode, auto_detect=auto_detect)
 
-    logging.info('row_cor: %s', row_cor)
+    logging.debug('row_cor: %s', row_cor)
     return row_cor
 
 
@@ -69,8 +69,9 @@ if __name__ == '__main__':
                     row, charset_decode='GBK', charset_encode='utf-8',
                     auto_detect=True)
     except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
-        conn.close()
+        logging.debug("An error occurred. {}".format(e.args[-1]))
+        if 'conn' in dir():
+            conn.close()
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

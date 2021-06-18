@@ -44,7 +44,7 @@ def row_to_df(row, col, num_to_str=False, to_file=''):
     row_func(row, data_to_df, df_data=df_list, num_to_str=num_to_str)
 
     df = pd.DataFrame(df_list[1:], columns=df_list[0])
-    logging.info('df_from_row: %s', df)
+    logging.debug('df_from_row: %s', df)
 
     if to_file:
         df_to_excel(df, to_file, num_to_str)
@@ -96,8 +96,9 @@ if __name__ == '__main__':
                     row, cursor.description,
                     num_to_str=True, to_file='D:\\test_todf.xlsx')
     except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
-        conn.close()
+        logging.debug("An error occurred. {}".format(e.args[-1]))
+        if 'conn' in dir():
+            conn.close()
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

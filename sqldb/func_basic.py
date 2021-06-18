@@ -21,10 +21,10 @@ def sql_read(script_file, encoding='utf8'):
         with open(str(script_file), encoding=encoding) as f:
             for line in f.readlines():
                 sql = sql + line
-        logging.info('plaintext: %s', sql)
+        logging.debug('plaintext: %s', sql)
         return sql
     except Exception as e:
-        print('Got error {!r}, Errno is {}'.format(e, e.args))
+        logging.debug("An error occurred. {}".format(e.args[-1]))
 
 
 def row_func(row, func, *args, **kwargs):
@@ -42,9 +42,9 @@ def row_func(row, func, *args, **kwargs):
         elif isinstance(row, dict):
             row_cor = row_dict_func(row, func, *args, **kwargs)
         else:
-            print('Error. Unexpected row type.')
+            logging.error('Error. Unexpected row type.')
     else:
-        print('Error. Blank row.')
+        logging.info('Blank row.')
 
     logging.debug('row_cor: %s', row_cor)
     return row_cor
@@ -63,13 +63,13 @@ def row_fecthall(row, func, *args, **kwargs):
             row_cor.append(row_dict_func(
                 row_dict, func, *args, **kwargs))
     else:
-        print('Error. The first elements is not dict.')
+        logging.error('Error. Unexpected row[0] type.')
     return row_cor
 
 
 def row_tuple_func(row_tuple, func, *args, **kwargs):
     row_tuple_cor = ()
-    logging.info('row_tuple: %s', row_tuple)
+    logging.debug('row_tuple: %s', row_tuple)
     length = len(row_tuple)
     logging.debug('length: %s', length)
     for i, j in enumerate(row_tuple):

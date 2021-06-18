@@ -3,8 +3,8 @@
 '''
 @File    :   add_gitignore.py
 @Author  :   Billy Zhou
-@Time    :   2021/06/14
-@Version :   1.0.0
+@Time    :   2021/06/15
+@Version :   1.1.0
 @Desc    :   None
 '''
 
@@ -18,7 +18,21 @@ from conf_manage import readConf  # noqa: E402
 cwdPath = Path(readConf()["path"]['cwd'])
 
 
+def init_gitignore():
+    ignore_list = [
+        '/.vscode/', '/gitignore/', '*__pycache__/', '*.conf', '*.log',
+        '*.ipynb_checkpoints/', '*.ipynb', '!template.ipynb'
+    ]
+    gitignore_filepath = cwdPath.joinpath('.gitignore')
+    if not gitignore_filepath.exists():
+        with open(gitignore_filepath, 'a+', encoding='utf-8') as f:
+            for ignore in ignore_list:
+                f.write(ignore + '\n')
+
+
 def add_gitignore(ignore_path, under_gitignore=False):
+    init_gitignore()
+
     ignore_list = [ignore_path]
     if under_gitignore:
         ignore_list.append('/gitignore/')
@@ -34,8 +48,8 @@ def add_gitignore(ignore_path, under_gitignore=False):
                 break
         if not status_ignored:
             f.write('\n' + ignore_path + '\n')
-            print(ignore_path + ' added to .gitignore')
-        print('status_ignored: %s' % status_ignored)
+            logging.info(ignore_path + ' added to .gitignore')
+        logging.debug('status_ignored: %s' % status_ignored)
 
 
 if __name__ == '__main__':
@@ -46,7 +60,7 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    add_gitignore('/rsa', under_gitignore=False)
+    add_gitignore('/rsa', under_gitignore=True)
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')
