@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   to_excel.py
+@File    :   to_file.py
 @Author  :   Billy Zhou
-@Time    :   2021/06/01
+@Time    :   2021/07/30
 @Version :   1.0.0
 @Desc    :   None
 '''
@@ -80,6 +80,13 @@ if __name__ == '__main__':
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
+
+    import numpy as np
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame(rng.random(100))
+    df_to_file(df, 'D:\\to_file.csv')
+    df_to_file(df, 'D:\\to_file.xls', False)
+    df_to_file(df, 'D:\\to_file.xlsx', True)
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

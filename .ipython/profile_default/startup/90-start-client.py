@@ -2,19 +2,19 @@
 # -*- encoding: utf-8 -*-
 # flake8: noqa
 '''
-@File    :   90-start-mssql.py
+@File    :   90-start-client.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/12
-@Version :   1.0.0
+@Time    :   2021/07/30
+@Version :   1.1.0
 @Desc    :   None
 '''
 
 
 import sys
 from pathlib import Path
-sys.path.append("D:\pycharm\py_for_mssql") # change the path to your workspace
+sys.path.append("D:\pycharm\py_client_sqlalchemy")  # change the path to your workspace
 
-from sqldb.init_db import Sqldb
+from sqldb.init_db import SqlDbManager
 from sqldb.func_basic import sql_read
 from sqldb.func_query import sql_query
 

@@ -21,25 +21,22 @@ from conf_manage import readConf  # noqa: E402
 cwdPath = Path(readConf()["path"]['cwd'])
 
 
-def CheckRSAKeys(encrypt=True, savepath=cwdPath.joinpath('gitignore\\rsa')):
+def CheckRSAKeys(savepath=cwdPath.joinpath('gitignore\\rsa')):
     add_gitignore('/gitignore/rsa/', under_gitignore=True)
 
-    if encrypt:
-        if not Path(savepath).is_dir():
-            savepath = cwdPath.joinpath('gitignore\\rsa')
-            logging.warning('Unvaild savepath. Save to default path(' + str(savepath) + ').')
-            if not Path(savepath).exists():
-                Path.mkdir(savepath, parents=True)
+    if not Path(savepath).is_dir():
+        savepath = cwdPath.joinpath('gitignore\\rsa')
+        logging.warning('Unvaild savepath. Save to default path(' + str(savepath) + ').')
+        if not Path(savepath).exists():
+            Path.mkdir(savepath, parents=True)
 
-        pubkeyfile = Path(savepath).joinpath('public.pem')
-        prikeyfile = Path(savepath).joinpath('private.pem')
-        if not (Path(pubkeyfile).exists() and Path(prikeyfile).exists()):
-            logging.warning('Keyfiles unfound. Creating under path(' + str(savepath) + ').')
-            pubkeyfile, prikeyfile = CreateRSAKeys(savepath)
+    pubkeyfile = Path(savepath).joinpath('public.pem')
+    prikeyfile = Path(savepath).joinpath('private.pem')
+    if not (Path(pubkeyfile).exists() and Path(prikeyfile).exists()):
+        logging.warning('Keyfiles unfound. Creating under path(' + str(savepath) + ').')
+        pubkeyfile, prikeyfile = CreateRSAKeys(savepath)
 
-        return pubkeyfile, prikeyfile
-    else:
-        return '', ''
+    return pubkeyfile, prikeyfile
 
 
 def CreateRSAKeys(savepath):
@@ -133,7 +130,7 @@ if __name__ == '__main__':
     datafile = cwdPath.joinpath('rsa_test.txt')
 
     pubkeyfile, prikeyfile = CheckRSAKeys()
-    # pubkeyfile, prikeyfile = CheckRSAKeys(True, 'rsa')
+    # pubkeyfile, prikeyfile = CheckRSAKeys('rsa')
 
     # datafile_encrypted = cwdPath.joinpath('rsa_encrypted.txt')
     # datafile_decrypted = cwdPath.joinpath('rsa_decrypted.txt')

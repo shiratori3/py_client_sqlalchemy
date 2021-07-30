@@ -64,7 +64,7 @@ if __name__ == '__main__':
     engine_164 = manager.get_engine('164')
 
     sql = sql_read(cwdPath.joinpath(
-        'gitignore\\sqlscript\\数值异常：首列均为年份数开头.txt'))
+        'gitignore\\sqlscript\\test_year.txt'))
     outfile = 'D:\\test.xlsx'
     sql_result = sql_query(
         engine_164, sql=sql, sql_db_switch='USE JYFIN', return_df=False, to_file=outfile)

@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # testing sql_read()
     # from conf_manage import readConf  # noqa: E402
     # cwdPath = Path(readConf()["path"]['cwd'])
-    # with open(cwdPath.joinpath('sqlscript\\sql_test.txt'),
+    # with open(cwdPath.joinpath('gitignore\\sqlscript\\sql_test.txt'),
     #           'a+') as test_file:
     #     test_file.seek(0, 0)  # back to the start
     #     f = test_file.read()
