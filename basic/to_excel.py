@@ -15,21 +15,24 @@ import pyexcel as pe
 from pathlib import Path
 
 
-def df_to_excel(df, to_file, num_to_str=True):
+def df_to_file(df, to_file, num_to_str=True):
+    logging.debug('df.head: %s', df.head())
+    logging.debug('type(df): %s', type(df))
+    logging.debug('to_file: %s', to_file)
     if not isinstance(df, pd.DataFrame):
         logging.error('The type of data inputed is not dataframe')
+    else:
         if df.empty:
             logging.error('The dataframe is blank')
         else:
             if not to_file:
-                logging.error('Not to_file.')
+                logging.error('No filepath.')
             else:
                 if to_file[::-1].find('.') != -1:
-                    to_filetype = to_file[-int(to_file[::-1].find('.')):]
+                    filetype = to_file[-int(to_file[::-1].find('.')):]
                     to_csvfile = to_file[:-int(to_file[::-1].find('.'))] + 'csv'
                     df.to_csv(to_csvfile, index=False, encoding='utf_8_sig')
-                    # to_file = 'D:\\test_todf.xls'
-                    if to_filetype in ('xls', 'xlsx'):
+                    if filetype in ('xls', 'xlsx'):
                         pe.save_as(
                             file_name=to_csvfile, dest_file_name=to_file,
                             encoding='utf_8_sig',
@@ -66,7 +69,7 @@ def list_of_dicts_to_df(records_list, col_list_request=[], num_to_str=True, to_f
     df = pd.DataFrame(records_array[1:], columns=records_array[0])
 
     if to_file:
-        df_to_excel(df, to_file, num_to_str)
+        df_to_file(df, to_file, num_to_str)
     return df
 
 

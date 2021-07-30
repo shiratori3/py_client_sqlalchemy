@@ -11,30 +11,40 @@
 
 import sys
 import logging
+import pandas as pd
 from pathlib import Path
+from sqlalchemy import text
 sys.path.append(str(Path(__file__).parent.parent))
 
 from sqldb.func_basic import sql_read  # noqa: E402
-from sqldb.func_charset import row_cor_charset  # noqa: E402
-from sqldb.func_todf import row_to_df  # noqa: E402
+from basic.to_excel import df_to_file  # noqa: E402
 
 
 def sql_query(
-        conn, sql, to_file='', num_to_str=True,
-        as_dict=True, fetchall=True,
-        charset_cor_de='GBK', charset_cor_en='latin1', charset_detect=False):
-    with conn.cursor(as_dict=True) as cursor:
-        cursor.execute(sql)
-        row = cursor.fetchall() if fetchall else cursor.fetchone()
-        row = row_cor_charset(
-            row,
-            charset_encode=charset_cor_en, charset_decode=charset_cor_de,
-            auto_detect=charset_detect
-        ) if charset_cor_de else row
-        df = row_to_df(
-            row, cursor.description,
-            num_to_str=num_to_str, to_file=to_file)
-        return df
+        engine, sql,
+        sql_db_switch='', fetchall=True, return_df=True, to_file='', excel_str_num=True):
+    try:
+        with engine.connect() as conn:
+            if sql_db_switch:
+                conn.execute(text(sql_db_switch))
+            result = conn.execute(text(sql))
+            # result.keys()  # result.RMKeyView, list-like object
+            # result.all()  # list of tuple, same to fetchall()
+            # result.fetchmany(size=2)  # list of one tuple
+            # result.fetchone()  # tuple
+            # result.fetchone()._asdict()  # dict
+            row = result.fetchall() if fetchall else result.fetchone()
+
+            if return_df or to_file:
+                df = pd.DataFrame(row, columns=list(result.keys()))
+                if to_file:
+                    df_to_file(df, to_file, excel_str_num)
+
+            return df if return_df else row
+    except Exception as e:
+        logging.debug("An error occurred. {}".format(e.args[-1]))
+        if 'conn' in dir():
+            conn.close()
 
 
 if __name__ == '__main__':
@@ -45,24 +55,20 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    from sqldb.init_db import Sqldb
+    from sqldb.init_db import SqlDbManager
     from conf_manage import readConf  # noqa: E402
     cwdPath = Path(readConf()["path"]['cwd'])
-    try:
-        with Sqldb('164').create_conn(
-                conn_db='JYFIN', conn_charset='utf8') as conn:
-            sql = sql_read(cwdPath.joinpath(
-                'gitignore\\sqlscript\\数值异常：首列均为年份数开头.txt'))
-            outfile = 'D:\\test.xlsx'
-            result = sql_query(
-                conn, sql, to_file=outfile, num_to_str=True,
-                as_dict=True, fetchall=True,
-                charset_cor_de='GBK', charset_cor_en='latin1',
-                charset_detect=False)
-    except Exception as e:
-        logging.debug("An error occurred. {}".format(e.args[-1]))
-        if 'conn' in dir():
-            conn.close()
+
+    manager = SqlDbManager()
+    manager.set_engine('164', future=True)
+    engine_164 = manager.get_engine('164')
+
+    sql = sql_read(cwdPath.joinpath(
+        'gitignore\\sqlscript\\数值异常：首列均为年份数开头.txt'))
+    outfile = 'D:\\test.xlsx'
+    sql_result = sql_query(
+        engine_164, sql=sql, sql_db_switch='USE JYFIN', return_df=False, to_file=outfile)
+    logging.info(sql_result)
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

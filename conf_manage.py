@@ -18,12 +18,15 @@ from basic.input_check import input_checking_YN
 
 def confInit():
     basic_path = Path(os.path.abspath(os.path.dirname(__file__)))
-    return {
+    basic_dict = {
         'path': {
             'cwd': basic_path,
             'conffile': Path(basic_path).joinpath('settings.conf'),
         },
     }
+    if not os.path.exists(str(basic_dict['path']['conffile'])):
+        writeConf(str(basic_path), basic_dict, 'settings.conf', True)
+    return basic_dict
 
 
 def readConf(
@@ -43,14 +46,13 @@ def readConf(
     if not dict_for_checking:
         """
         非比对模式：
-        存在conf_path下的conf_fname文件则读取，否则写入settings中的conf_dict_init
+        存在conf_path下的conf_fname文件则读取，否则返回False
         """
         if os.path.exists(conf_filepath):
             conf.read(conf_filepath)
+            return conf2dict(conf)
         else:
-            writeConf(conf_path, confInit(), conf_fname, CaseSens)
-            conf.read(conf_filepath)
-        return conf2dict(conf)
+            return False
     else:
         """
         比对模式：

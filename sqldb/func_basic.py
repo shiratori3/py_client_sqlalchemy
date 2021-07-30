@@ -29,18 +29,15 @@ def sql_read(script_file, encoding='utf8'):
 
 def row_func(row, func, *args, **kwargs):
     logging.debug('row: %s', row)
+    row_cor = ()
     if row:
-        # cursor.fetchall() return all rows as a list
+        # cursor.fetchall() return all rows as a list of tuples
         if isinstance(row, list):
             row_cor = row_fecthall(row, func, *args, **kwargs)
         # cursor.fetchone() return one row
         # cursor() return row as tuple
         elif isinstance(row, tuple):
             row_cor = row_tuple_func(row, func, *args, **kwargs)
-        # cursor.fetchone() return one row
-        # cursor(as_dict=True) return row as dict
-        elif isinstance(row, dict):
-            row_cor = row_dict_func(row, func, *args, **kwargs)
         else:
             logging.error('Error. Unexpected row type.')
     else:
@@ -57,11 +54,6 @@ def row_fecthall(row, func, *args, **kwargs):
         for row_tuple in row:
             row_cor.append(row_tuple_func(
                 row_tuple, func, *args, **kwargs))
-    # cursor(as_dict=True) return row as dict
-    elif isinstance(row[0], dict):
-        for row_dict in row:
-            row_cor.append(row_dict_func(
-                row_dict, func, *args, **kwargs))
     else:
         logging.error('Error. Unexpected row[0] type.')
     return row_cor
@@ -73,32 +65,14 @@ def row_tuple_func(row_tuple, func, *args, **kwargs):
     length = len(row_tuple)
     logging.debug('length: %s', length)
     for i, j in enumerate(row_tuple):
+        num_cor, value_cor = func(
+            (None, j), num_now=i + 1, length=length,
+            *args, **kwargs)
         logging.debug('num: %s', i)
         logging.debug('value: %s', j)
-        num_cor, value_cor = func(
-            (None, j), datatype='tuple', num_now=i + 1, length=length,
-            *args, **kwargs)
         logging.debug('value_cor: %s', value_cor)
         row_tuple_cor += (value_cor, )
     return row_tuple_cor
-
-
-def row_dict_func(row_dict, func, *args, **kwargs):
-    row_dict_cor = {}
-    logging.debug('row_dict: %s', row_dict)
-    length = len(row_dict)
-    logging.debug('length: %s', length)
-    for num, (i, j) in enumerate(row_dict.items()):
-        logging.debug('num: %s', num)
-        logging.debug('key: %s', i)
-        logging.debug('value: %s', j)
-        key_cor, value_cor = func(
-            (i, j), datatype='dict', num_now=num + 1, length=length,
-            *args, **kwargs)
-        logging.debug('key_cor: %s', key_cor)
-        logging.debug('value_cor: %s', value_cor)
-        row_dict_cor[key_cor] = value_cor
-    return row_dict_cor
 
 
 if __name__ == '__main__':
@@ -109,16 +83,11 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    row_fecthall_dict = [
-        {'test1': 'sdsaewe', 'test2': 14575},
-        {'test1': 1122, 'test2': 'awewe'}]
     row_fecthall_tuple = [('sdsaewe', 14575), (1122, 'awewe')]
-    row_dict = {'test1': 'sdsaewe', 'test2': 14575}
     row_tuple = ('sdsaewe', 14575)
 
-    def row_func_test(basic_data, datatype, num_now, length):
+    def row_func_test(basic_data, num_now, length):
         logging.info('basic_data: %s', basic_data)
-        logging.info('basic_data_type: %s', type(basic_data))
         logging.info('num_now: %s', num_now)
         logging.info('length: %s', length)
         if isinstance(basic_data[1], int):
@@ -130,17 +99,18 @@ if __name__ == '__main__':
     row_func(row_fecthall_tuple, row_func_test)
 
     # testing sql_read()
-    from conf_manage import readConf  # noqa: E402
-    cwdPath = Path(readConf()["path"]['cwd'])
-    with open(cwdPath.joinpath('sqlscript\\sql_test.txt'),
-              'a+') as test_file:
-        test_file.seek(0, 0)  # back to the start
-        f = test_file.read()
-        logging.debug(f)
-        if f == '':
-            logging.info('测试文件为空')
-            test_file.write('SELECT 1')
-    sql_read(cwdPath.joinpath('sqlscript\\sql_test.txt'))
+    # from conf_manage import readConf  # noqa: E402
+    # cwdPath = Path(readConf()["path"]['cwd'])
+    # with open(cwdPath.joinpath('sqlscript\\sql_test.txt'),
+    #           'a+') as test_file:
+    #     test_file.seek(0, 0)  # back to the start
+    #     f = test_file.read()
+    #     logging.debug(f)
+    #     if f == '':
+    #         logging.info('测试文件为空')
+    #         test_file.write('SELECT 1')
+
+    # sql_read(cwdPath.joinpath('sqlscript\\sql_test.txt'))
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')
