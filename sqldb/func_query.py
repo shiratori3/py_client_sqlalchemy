@@ -14,33 +14,53 @@ import logging
 import pandas as pd
 from pathlib import Path
 from sqlalchemy import text
+from sqlalchemy import bindparam
 sys.path.append(str(Path(__file__).parent.parent))
 
 from sqldb.func_basic import sql_read  # noqa: E402
-from basic.to_excel import df_to_file  # noqa: E402
+from basic.to_file import df_to_file  # noqa: E402
 
 
 def sql_query(
-        engine, sql,
-        sql_db_switch='', fetchall=True, return_df=True, to_file='', excel_str_num=True):
+        engine, sql, sql_db_switch='',
+        bindparams={}, commit_after=False,
+        fetchall=True, return_df=True, to_file='', excel_str_num=True):
     try:
         with engine.connect() as conn:
             if sql_db_switch:
                 conn.execute(text(sql_db_switch))
-            result = conn.execute(text(sql))
+            if bindparams:
+                stmt = text(sql)
+                for bind_key, params in bindparams.items():
+                    logging.debug("bindparams[{0}]: {1}".format(bind_key, params))
+                    for key, value in params.items():
+                        if key == 'value':
+                            stmt = stmt.bindparams(bindparam(bind_key, value=value))
+                        # elif key == 'type_':
+                        #     stmt = stmt.bindparams(bindparam(bind_key, type_=value))
+                        # elif key == 'unique':
+                        #     stmt = stmt.bindparams(bindparam(bind_key, unique=value))
+            else:
+                stmt = text(sql)
+            logging.debug("stmt: %s", stmt.compile(compile_kwargs={"literal_binds": True}))
+            result = conn.execute(stmt)
             # result.keys()  # result.RMKeyView, list-like object
             # result.all()  # list of tuple, same to fetchall()
             # result.fetchmany(size=2)  # list of one tuple
             # result.fetchone()  # tuple
             # result.fetchone()._asdict()  # dict
-            row = result.fetchall() if fetchall else result.fetchone()
+            if commit_after:
+                conn.commit()
+            else:
+                row = result.fetchall() if fetchall else result.fetchone()
+                logging.info("row: %s", row)
 
-            if return_df or to_file:
-                df = pd.DataFrame(row, columns=list(result.keys()))
-                if to_file:
-                    df_to_file(df, to_file, excel_str_num)
+                if return_df or to_file:
+                    df = pd.DataFrame(row, columns=list(result.keys()))
+                    if to_file:
+                        df_to_file(df, to_file, excel_str_num)
 
-            return df if return_df else row
+                return df if return_df else row
     except Exception as e:
         logging.debug("An error occurred. {}".format(e.args[-1]))
         if 'conn' in dir():
