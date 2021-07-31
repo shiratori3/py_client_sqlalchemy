@@ -29,7 +29,9 @@ cwdPath = Path(readConf()["path"]['cwd'])
 
 class ConnUI(object):
     # manage the operation between user input and conn_info_file
-    def __init__(self, file_encrypt=True, pubkeyfile=None, prikeyfile=None):
+    def __init__(
+            self, conn_path=cwdPath.joinpath('gitignore\\conn'),
+            file_encrypt=True, pubkeyfile=None, prikeyfile=None):
         self._support_code = ['READ', 'UPDATE', 'DELETE', 'RENAME', 'ADD', 'CLEAR']
         # need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
         # need non-existing object: 'ADD'
@@ -38,7 +40,7 @@ class ConnUI(object):
         self._conn_list = []
         self._selected_conn = ''
         self._default_name = 'NewConnection'
-        self.fmgr = FileManager(file_encrypt, pubkeyfile, prikeyfile)
+        self.fmgr = FileManager(conn_path, file_encrypt, pubkeyfile, prikeyfile)
 
     def _check_handle(self, inputed_code):
         # check inputed code in _upport_code or not, if not, reinput until True.
@@ -211,19 +213,19 @@ class ConnUI(object):
 
 class FileManager(object):
     # manage the operation between conn_info_file and conn_txt_file
-    def __init__(self, file_encrypt, pubkeyfile, prikeyfile):
-        self._conn_path = cwdPath.joinpath('gitignore\\conn')
-        self._conf_filename = 'conn_info.json'
+    def __init__(self, conn_path, file_encrypt, pubkeyfile, prikeyfile):
         self._file_encrypt = file_encrypt
         self.__pubkeyfile = pubkeyfile
         self.__prikeyfile = prikeyfile
+        self._conn_path = Path(conn_path)
+        self._conf_filename = 'conn_info.json'
+        self._conn_conf = {}
         self._support_dialect = ['mysql', 'mssql', 'sqlite']
         self._support_driver = {
             'mysql': ['pymysql', 'mysqldb', 'no driver'],
             'mssql': ['pyodbc', 'pymssql'],
             'sqlite': ['no driver'],
         }
-        self._conn_conf = {}
         self.conf_dict = {}
 
         if self._file_encrypt:
@@ -231,8 +233,11 @@ class FileManager(object):
                 self.__pubkeyfile, self.__prikeyfile = pubkeyfile, prikeyfile
             else:
                 self.__pubkeyfile, self.__prikeyfile = CheckRSAKeys()
+        else:
+            self.__pubkeyfile, self.__prikeyfile = None, None
 
-        # check conn_dict while init
+        # check conn_path and conn_dict while init
+        self._conn_path = self._check_path(self._conn_path)
         self._check_conn_dict()
 
         # check ignore
@@ -240,16 +245,18 @@ class FileManager(object):
 
     def _check_path(self, uncheck_path) -> None:
         # check Path.is_dir() and exists()
-        if not Path(uncheck_path).is_dir():
-            self._conn_path = cwdPath.joinpath('gitignore\\conn')
-            logging.warning('Unvaild path. Using the default path({0}).'.format(self._conn_path))
-            if not Path(uncheck_path).exists():
-                logging.info("The path '{0}' not existed. Creating.".format(str(uncheck_path)))
-                Path(uncheck_path).mkdir(parents=True)
+        checked_path = uncheck_path
+        if not Path(checked_path).is_dir():
+            checked_path = cwdPath.joinpath('gitignore\\conn')
+            logging.warning('Unvaild path. Using the default path[{0}].'.format(checked_path))
+        if not Path(checked_path).exists():
+            Path(checked_path).mkdir(parents=True)
+            logging.info("The path[{0}] not existed. Creating.".format(str(checked_path)))
+        return Path(checked_path)
 
     def _check_filepath(self) -> None:
         # check path and check file exists()
-        self._check_path(self._conn_path)
+        self._conn_path = self._check_path(self._conn_path)
         self._conn_fpath = self._conn_path.joinpath(self.conf_filename)
         if not self._conn_fpath.exists():
             with open(self._conn_fpath, 'w') as f:
@@ -388,17 +395,16 @@ class FileManager(object):
 
     @property
     def conn_path(self) -> Path:
-        self._check_path(self._conn_path)
         return self._conn_path
 
     @conn_path.setter
     def conn_path(self, new_path):
-        self._check_path(self.new_path)
         old_path = self._conn_path
-        self._conn_path = Path(new_path)
-        logging.info("""The default path of conffile changed.
-        From old_path: {0}
-        to new_path: {1}""".format(str(old_path), str(new_path)))
+        self._conn_path = self._check_path(new_path)
+        if str(old_path) != str(self._conn_path):
+            logging.info("""The default path of conffile changed.
+            From old_path: {0}
+            to new_path: {1}""".format(str(old_path), str(self._conn_path)))
 
     @property
     def conf_filename(self) -> str:
@@ -427,8 +433,8 @@ if __name__ == '__main__':
 
     how_manager_run = logging.debug("""
 Read  → Existed     → Readed
-      → Not Existed → Choose existed or not
-                    → To add or not
+      → Not Existed → Read existed or not → Readed
+                                          → To add or not
 
 Update works like Read
 
@@ -436,15 +442,15 @@ Add   → Not Existed → Added
       → Existed     → Update or not
 
 Del   → Existed     → Deleted
-      → Not Existed → Choose existed or not
+      → Not Existed → Delete existed or not
 
 Rename works like Del
 
 Clear → Existed     → Cleared
       → Not Existed → To add or not
 """)
-    manager = ConnUI()
-    manager.run()
+    manager = ConnUI('D:\\')
+    print(manager.fmgr.conn_path)
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')
