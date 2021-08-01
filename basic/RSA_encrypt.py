@@ -17,8 +17,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from basic.add_gitignore import add_gitignore  # noqa: E402
-from conf_manage import readConf  # noqa: E402
-cwdPath = Path(readConf()["path"]['cwd'])
+from ConfManager import cwdPath  # noqa: E402
 
 
 def CheckRSAKeys(savepath=cwdPath.joinpath('gitignore\\rsa')):

@@ -3,8 +3,8 @@
 '''
 @File    :   ConnUI.py
 @Author  :   Billy Zhou
-@Time    :   2021/07/30
-@Version :   1.0.0
+@Time    :   2021/07/31
+@Version :   1.0.1
 @Desc    :   None
 '''
 
@@ -22,16 +22,15 @@ from basic.input_check import input_checking_YN
 from basic.RSA_encrypt import CheckRSAKeys
 from basic.RSA_encrypt import Encrypt
 from basic.RSA_encrypt import Decrypt
-from conf_manage import readConf
-from conf_manage import dict_compare
-cwdPath = Path(readConf()["path"]['cwd'])
+from basic.compare import dict_compare
+from ConfManager import cwdPath
 
 
 class ConnUI(object):
     # manage the operation between user input and conn_info_file
     def __init__(
             self, conn_path=cwdPath.joinpath('gitignore\\conn'),
-            file_encrypt=True, pubkeyfile=None, prikeyfile=None):
+            file_encrypt: bool = True, pubkeyfile: Path = None, prikeyfile: Path = None):
         self._support_code = ['READ', 'UPDATE', 'DELETE', 'RENAME', 'ADD', 'CLEAR']
         # need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
         # need non-existing object: 'ADD'
@@ -42,7 +41,7 @@ class ConnUI(object):
         self._default_name = 'NewConnection'
         self.fmgr = FileManager(conn_path, file_encrypt, pubkeyfile, prikeyfile)
 
-    def _check_handle(self, inputed_code):
+    def _check_handle(self, inputed_code) -> None:
         # check inputed code in _upport_code or not, if not, reinput until True.
         if inputed_code.upper() not in self._support_code:
             logging.error('Invaild code inputed.')
@@ -51,7 +50,7 @@ class ConnUI(object):
         else:
             self._handling_code = inputed_code.upper()
 
-    def _check_conn_included(self, conn_name):
+    def _check_conn_included(self, conn_name) -> None:
         # read conf file of connections and check whether conn_name in conn_list
         self.conf_dict = self.fmgr.read_conf()
         self._selected_conn = ''
@@ -69,7 +68,7 @@ class ConnUI(object):
         else:
             logging.info('No existing connections.')
 
-    def run(self, inputed_code='', conn_name=''):
+    def run(self, inputed_code: str = '', conn_name: str = '') -> dict or None:
         if not inputed_code:
             inputed_code = input_checking_list(
                 self._support_code, case_sens=False,
@@ -148,24 +147,24 @@ class ConnUI(object):
                             self._code_rename(self._selected_conn)
         logging.info('ConnUI run over.')
 
-    def _code_read(self, conn_name):
+    def _code_read(self, conn_name) -> dict:
         conn_conf = self.fmgr.run('READ', conn_name)
         logging.info('Connection[%s] readed.' % conn_name)
         return conn_conf
 
-    def _code_update(self, conn_name):
+    def _code_update(self, conn_name) -> None:
         self.fmgr.run('UPDATE', conn_name)
         logging.info('Connection[%s] updated.' % conn_name)
 
-    def _code_rename(self, conn_name):
+    def _code_rename(self, conn_name) -> None:
         self.fmgr.run('RENAME', conn_name)
         logging.info('Connection[%s] renamed.' % conn_name)
 
-    def _code_delete(self, conn_name):
+    def _code_delete(self, conn_name) -> None:
         self.fmgr.run('DELETE', conn_name)
         logging.info('Connection[%s] deleted.' % conn_name)
 
-    def _code_add(self, conn_name=''):
+    def _code_add(self, conn_name='') -> None:
         # check whether conn_name is vaild and conn_name in conn_list
         # self._selected_conn meanings that _check_conn_included(conn_name) return True
         if not conn_name or self._selected_conn:
@@ -178,7 +177,7 @@ class ConnUI(object):
         self.fmgr.run('ADD', conn_name)
         logging.info('Connection[%s] added.' % conn_name)
 
-    def _code_clear(self):
+    def _code_clear(self) -> None:
         YN = input_checking_YN(
             tip_words='Attension! This will delete all existing connections. Are you sure?',
             default_Y=False)
@@ -194,7 +193,7 @@ class ConnUI(object):
         return self._default_name
 
     @default_name.setter
-    def default_name(self, new_name):
+    def default_name(self, new_name: str):
         old_name = self._default_name
         self._default_name = str(new_name)
         logging.info("""The default name of new connections changed.
@@ -206,7 +205,7 @@ class ConnUI(object):
         return self._handling_code
 
     @handling_code.setter
-    def handling_code(self, new_code):
+    def handling_code(self, new_code: str):
         self._check_handle(new_code)
         self._handling_code = new_code
 
@@ -243,7 +242,7 @@ class FileManager(object):
         # check ignore
         add_gitignore('/gitignore/conn/', under_gitignore=True)
 
-    def _check_path(self, uncheck_path) -> None:
+    def _check_path(self, uncheck_path) -> Path:
         # check Path.is_dir() and exists()
         checked_path = uncheck_path
         if not Path(checked_path).is_dir():
@@ -292,7 +291,7 @@ class FileManager(object):
         # update conf_dict
         self._write_conf()
 
-    def read_conf(self):
+    def read_conf(self) -> dict:
         # read the conf file
         self._check_filepath()
         with open(self._conn_fpath) as f:
@@ -301,14 +300,14 @@ class FileManager(object):
         logging.debug(self.conf_dict)
         return self.conf_dict
 
-    def _write_conf(self):
+    def _write_conf(self) -> None:
         # write the conf file
         self._check_filepath()
         with open(self._conn_fpath, 'w') as f:
             json.dump(self.conf_dict, f)
         logging.debug(self.conf_dict)
 
-    def run(self, inputed_code, conn_name):
+    def run(self, inputed_code, conn_name) -> dict or None:
         self.conf_dict = self.read_conf()
         # inputed_code in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME']
         if inputed_code == 'READ':
@@ -357,7 +356,7 @@ class FileManager(object):
         self._write_conf()
         logging.info('FileManager run over.')
 
-    def _write_conn(self, conn_name, conn_path):
+    def _write_conn(self, conn_name, conn_path) -> None:
         # write the _conn_conf to conn_file
         with open(conn_path.joinpath(conn_name + '.txt'), 'w') as file_obj:
             if self.__pubkeyfile:
@@ -365,7 +364,7 @@ class FileManager(object):
             else:
                 json.dump(self._conn_conf, file_obj)
 
-    def _create_conn_url(self):
+    def _create_conn_url(self) -> dict:
         dialect = input_checking_list(
             self._support_dialect, 'Please choose the database dialect.', case_sens=True)
         driver = input_checking_list(
@@ -394,7 +393,7 @@ class FileManager(object):
         return conf_url
 
     @property
-    def conn_path(self) -> Path:
+    def conn_path(self):
         return self._conn_path
 
     @conn_path.setter
@@ -407,7 +406,7 @@ class FileManager(object):
             to new_path: {1}""".format(str(old_path), str(self._conn_path)))
 
     @property
-    def conf_filename(self) -> str:
+    def conf_filename(self):
         return self._conf_filename
 
     @conf_filename.setter

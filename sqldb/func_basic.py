@@ -99,18 +99,17 @@ if __name__ == '__main__':
     row_func(row_fecthall_tuple, row_func_test)
 
     # testing sql_read()
-    # from conf_manage import readConf  # noqa: E402
-    # cwdPath = Path(readConf()["path"]['cwd'])
-    # with open(cwdPath.joinpath('gitignore\\sqlscript\\sql_test.txt'),
-    #           'a+') as test_file:
-    #     test_file.seek(0, 0)  # back to the start
-    #     f = test_file.read()
-    #     logging.debug(f)
-    #     if f == '':
-    #         logging.info('测试文件为空')
-    #         test_file.write('SELECT 1')
+    from ConfManager import cwdPath  # noqa: E402
+    with open(cwdPath.joinpath('gitignore\\sqlscript\\sql_test.txt'),
+              'a+') as test_file:
+        test_file.seek(0, 0)  # back to the start
+        f = test_file.read()
+        logging.debug(f)
+        if f == '':
+            logging.info('测试文件为空')
+            test_file.write('SELECT 1')
 
-    # sql_read(cwdPath.joinpath('sqlscript\\sql_test.txt'))
+    sql_read(cwdPath.joinpath('sqlscript\\sql_test.txt'))
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

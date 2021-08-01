@@ -76,8 +76,7 @@ if __name__ == '__main__':
     logging.debug('==========================================================')
 
     from sqldb.init_db import SqlDbManager
-    from conf_manage import readConf  # noqa: E402
-    cwdPath = Path(readConf()["path"]['cwd'])
+    from ConfManager import cwdPath  # noqa: E402
 
     manager = SqlDbManager()
     manager.set_engine('164', future=True)

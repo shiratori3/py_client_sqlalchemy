@@ -14,8 +14,7 @@ import logging
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from conf_manage import readConf  # noqa: E402
-cwdPath = Path(readConf()["path"]['cwd'])
+from ConfManager import cwdPath  # noqa: E402
 
 
 def init_gitignore():
