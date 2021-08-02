@@ -23,7 +23,7 @@ from ConnUI import ConnUI  # noqa: E402
 class SqlDbManager(object):
     def __init__(self, conn_ui=False):
         self._engine_dict = {}
-        if not self.ConnUI:
+        if not conn_ui:
             self.CUI = ConnUI(FileManager(file_encrypt=True, pubkeyfile=None, prikeyfile=None))
         else:
             # use the inputed CUI
@@ -33,7 +33,7 @@ class SqlDbManager(object):
         self.CUI.run()
 
     def read_conn_list(self):
-        conn_list = [name for name, path in self.CUI.fmgr.read_conf().items()]
+        conn_list = [name for name, path in self.CUI.fmgr.read_conf()['conn'].items()]
         logging.info(
             'Existed connections: %s', '"' + '",  "'.join(conn_list) + '"')
 

@@ -395,7 +395,8 @@ if __name__ == '__main__':
     fmgr = FileManager()
     CUI = ConnUI(fmgr)
     # print(fmgr._conf_path)
-    print(CUI.run())
+    print(CUI.read_conn_list())
+    # print(CUI.run())
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')
