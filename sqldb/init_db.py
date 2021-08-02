@@ -14,15 +14,20 @@ import logging
 from pathlib import Path
 from sqlalchemy import engine_from_config
 from sqlalchemy import text
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 
+from ConnUI import FileManager  # noqa: E402
 from ConnUI import ConnUI  # noqa: E402
 
 
 class SqlDbManager(object):
-    def __init__(self, file_encrypt=True, pubkeyfile=None, prikeyfile=None):
+    def __init__(self, conn_ui=False):
         self._engine_dict = {}
-        self.CUI = ConnUI(file_encrypt, pubkeyfile, prikeyfile)
+        if not self.ConnUI:
+            self.CUI = ConnUI(FileManager(file_encrypt=True, pubkeyfile=None, prikeyfile=None))
+        else:
+            # use the inputed CUI
+            self.CUI = conn_ui
 
     def run_CUI(self, inputed_code='', conn_name=''):
         self.CUI.run()

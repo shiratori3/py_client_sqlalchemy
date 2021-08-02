@@ -15,7 +15,7 @@ import pandas as pd
 from pathlib import Path
 from sqlalchemy import text
 from sqlalchemy import bindparam
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 
 from sqldb.func_basic import sql_read  # noqa: E402
 from basic.to_file import df_to_file  # noqa: E402

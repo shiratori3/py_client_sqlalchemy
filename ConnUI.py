@@ -3,14 +3,13 @@
 '''
 @File    :   ConnUI.py
 @Author  :   Billy Zhou
-@Time    :   2021/07/31
-@Version :   1.0.1
+@Time    :   2021/08/02
+@Version :   1.1.0
 @Desc    :   None
 '''
 
 import logging
 import json
-# import yaml
 from pathlib import Path
 from urllib.parse import quote as urlquote
 
@@ -23,39 +22,25 @@ from basic.RSA_encrypt import CheckRSAKeys
 from basic.RSA_encrypt import Encrypt
 from basic.RSA_encrypt import Decrypt
 from basic.compare import dict_compare
+from BaseClass import BaseManagerUI
+from BaseClass import BaseFileManager
 from ConfManager import cwdPath
 
 
-class ConnUI(object):
-    # manage the operation between user input and conn_info_file
-    def __init__(
-            self, conn_path=cwdPath.joinpath('gitignore\\conn'),
-            file_encrypt: bool = True, pubkeyfile: Path = None, prikeyfile: Path = None):
-        self._support_code = ['READ', 'UPDATE', 'DELETE', 'RENAME', 'ADD', 'CLEAR']
-        # need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
-        # need non-existing object: 'ADD'
-        # not need object: 'CLEAR'
-        self._handling_code = ''
+class ConnUI(BaseManagerUI):
+    def __init__(self, file_manager):
+        super().__init__(file_manager)
+
         self._conn_list = []
         self._selected_conn = ''
         self._default_name = 'NewConnection'
-        self.fmgr = FileManager(conn_path, file_encrypt, pubkeyfile, prikeyfile)
 
-    def _check_handle(self, inputed_code) -> None:
-        # check inputed code in _upport_code or not, if not, reinput until True.
-        if inputed_code.upper() not in self._support_code:
-            logging.error('Invaild code inputed.')
-            self._handling_code = input_checking_list(
-                self._support_code, 'Please choose your operation.')
-        else:
-            self._handling_code = inputed_code.upper()
-
-    def _check_conn_included(self, conn_name) -> None:
+    def _check_included(self, conn_name: str = '') -> None:
         # read conf file of connections and check whether conn_name in conn_list
         self.conf_dict = self.fmgr.read_conf()
         self._selected_conn = ''
-        if self.conf_dict:
-            self._conn_list = [name for name, path in self.conf_dict.items()]
+        if self.conf_dict.get('conn'):
+            self._conn_list = [name for name, path in self.conf_dict['conn'].items()]
             conn_list_str = '"' + '",  "'.join(self._conn_list) + '"'
             logging.info('Existed connections: %s', conn_list_str)
             # check whether conn_name in conn_list
@@ -69,6 +54,31 @@ class ConnUI(object):
             logging.info('No existing connections.')
 
     def run(self, inputed_code: str = '', conn_name: str = '') -> dict or None:
+        """operate according to inputed_code.
+        Operation flow of each inputed_code like this:
+            Read  → Existed     → Readed
+                → Not Existed → Read existed or not → Readed
+                                                    → To add or not
+            Update works like Read
+            Add   → Not Existed → Added
+                  → Existed     → Update or not
+            Del   → Existed     → Deleted
+                  → Not Existed → Delete existed or not
+            Rename works like Del
+            Clear → Existed     → Cleared
+                  → Not Existed → To add or not
+
+        Args:
+            inputed_code: str
+                the relation between inputed_code and object:
+                    need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
+                    need non-existing object: 'ADD'
+                    not need object: 'CLEAR'
+            operated_object: str
+
+        Returns:
+            return none or a dict when inputed_code is 'READ'.
+        """
         if not inputed_code:
             inputed_code = input_checking_list(
                 self._support_code, case_sens=False,
@@ -77,7 +87,7 @@ class ConnUI(object):
         # check inputed code in _upport_code or not, if not, reinput until True.
         self._check_handle(inputed_code)
         # read conf file of connections and check whether conn_name in conn_list
-        self._check_conn_included(conn_name)
+        self._check_included(conn_name)
 
         # handle the conf_file and txt file of connections according to inputed_code
         # not existing connection in conf_file
@@ -166,14 +176,14 @@ class ConnUI(object):
 
     def _code_add(self, conn_name='') -> None:
         # check whether conn_name is vaild and conn_name in conn_list
-        # self._selected_conn meanings that _check_conn_included(conn_name) return True
+        # self._selected_conn meanings that _check_included(conn_name) return True
         if not conn_name or self._selected_conn:
             tips_word = 'Please input the NEW connection name to ADD.'
             conn_name = input_default(self._default_name, tips_word)
-            self._check_conn_included(conn_name)
+            self._check_included(conn_name)
             while self._selected_conn:
                 conn_name = input_default(self._default_name, tips_word)
-                self._check_conn_included(conn_name)
+                self._check_included(conn_name)
         self.fmgr.run('ADD', conn_name)
         logging.info('Connection[%s] added.' % conn_name)
 
@@ -200,33 +210,24 @@ class ConnUI(object):
         From {0}
         to {1}""".format(old_name, str(new_name)))
 
-    @property
-    def handling_code(self):
-        return self._handling_code
 
-    @handling_code.setter
-    def handling_code(self, new_code: str):
-        self._check_handle(new_code)
-        self._handling_code = new_code
-
-
-class FileManager(object):
+class FileManager(BaseFileManager):
     # manage the operation between conn_info_file and conn_txt_file
-    def __init__(self, conn_path, file_encrypt, pubkeyfile, prikeyfile):
+    def __init__(self, conf_path=cwdPath.joinpath('gitignore\\conn'), file_encrypt=True, pubkeyfile=None, prikeyfile=None, case_sens=True):
+        super().__init__(conf_path=conf_path, case_sens=case_sens)
+
         self._file_encrypt = file_encrypt
         self.__pubkeyfile = pubkeyfile
         self.__prikeyfile = prikeyfile
-        self._conn_path = Path(conn_path)
-        self._conf_filename = 'conn_info.json'
-        self._conn_conf = {}
         self._support_dialect = ['mysql', 'mssql', 'sqlite']
         self._support_driver = {
             'mysql': ['pymysql', 'mysqldb', 'no driver'],
             'mssql': ['pyodbc', 'pymssql'],
             'sqlite': ['no driver'],
         }
-        self.conf_dict = {}
+        self._conn_conf = {}
 
+        # decide whether to encrypt file
         if self._file_encrypt:
             if pubkeyfile and pubkeyfile:
                 self.__pubkeyfile, self.__prikeyfile = pubkeyfile, prikeyfile
@@ -235,134 +236,122 @@ class FileManager(object):
         else:
             self.__pubkeyfile, self.__prikeyfile = None, None
 
-        # check conn_path and conn_dict while init
-        self._conn_path = self._check_path(self._conn_path)
-        self._check_conn_dict()
+        # check conn_dict while init
+        self._check_conf_dict()
 
         # check ignore
         add_gitignore('/gitignore/conn/', under_gitignore=True)
 
-    def _check_path(self, uncheck_path) -> Path:
-        # check Path.is_dir() and exists()
-        checked_path = uncheck_path
-        if not Path(checked_path).is_dir():
-            checked_path = cwdPath.joinpath('gitignore\\conn')
-            logging.warning('Unvaild path. Using the default path[{0}].'.format(checked_path))
-        if not Path(checked_path).exists():
-            Path(checked_path).mkdir(parents=True)
-            logging.info("The path[{0}] not existed. Creating.".format(str(checked_path)))
-        return Path(checked_path)
-
-    def _check_filepath(self) -> None:
-        # check path and check file exists()
-        self._conn_path = self._check_path(self._conn_path)
-        self._conn_fpath = self._conn_path.joinpath(self.conf_filename)
-        if not self._conn_fpath.exists():
-            with open(self._conn_fpath, 'w') as f:
-                json.dump({}, f)
-
-    def _check_conn_dict(self) -> None:
+    def _check_conf_dict(self) -> None:
+        """check the conf_dict to keep the file in path and filepath in dict correct"""
         self.conf_dict = self.read_conf()
-        conn_names = [f.name.replace('.txt', '') for f in list(self._conn_path.glob('*.txt'))]
+        conn_names = [f.name.replace('.txt', '') for f in list(self._conf_path.glob('*.txt'))]
 
-        # check conn and conn_file
-        # check conn_file in dict or not
-        for conn_name in conn_names:
-            if not self.conf_dict.get(conn_name):
-                logging.warning('The file of connection[%s] not in conn_dict.' % conn_name)
-                logging.warning('Remove the redundancy file.')
-                Path(self._conn_path.joinpath(conn_name + ".txt")).unlink()
+        if self.conf_dict.get('conn'):
+            # check conn and conn_file
+            # check redundancy conn_file not in conf_dict['conn']
+            for conn_name in conn_names:
+                if not self.conf_dict['conn'].get(conn_name):
+                    logging.warning('The file of connection[%s] not in conn_dict.' % conn_name)
+                    logging.warning('Remove the redundancy file.')
+                    Path(self._conf_path.joinpath(conn_name + ".txt")).unlink()
 
-        # check conn in path or not
-        for conn_name, fpath in self.conf_dict.items():
-            # conn_name with file
-            if conn_name in conn_names:
-                if not Path(fpath).exists():
-                    logging.warning(
-                        'The file of connection[%s] in conn_dict is wrong.' % conn_name)
-                    logging.warning('Fix the filepath.')
-                    self.conf_dict[conn_name] = str(self._conn_path.joinpath(conn_name + ".txt"))
-            # conn_name with no file
-            else:
-                logging.warning('The file of connection[%s] not exists.' % conn_name)
-                logging.warning('Remove the redundancy connection.')
-                self.conf_dict.pop(conn_name)
+            # check conn in conf_dict['conn'] have right filepath or not
+            error_conn_name = []
+            for conn_name, fpath in self.conf_dict['conn'].items():
+                # conn_name with file
+                if conn_name in conn_names:
+                    if not Path(fpath).exists():
+                        logging.warning(
+                            'The file of connection[%s] in conn_dict is wrong.' % conn_name)
+                        logging.warning('Fix the filepath.')
+                        self.conf_dict['conn'][conn_name] = str(self._conf_path.joinpath(conn_name + ".txt"))
+                # conn_name with no file
+                else:
+                    logging.warning('The file of connection[%s] not exists.' % conn_name)
+                    logging.warning('Remove the redundancy connection.')
+                    error_conn_name.append(conn_name)
+            for conn_name in error_conn_name:
+                self.conf_dict['conn'].pop(conn_name)
+        else:
+            # init
+            self.conf_dict['conn'] = {}
 
         # update conf_dict
         self._write_conf()
 
-    def read_conf(self) -> dict:
-        # read the conf file
-        self._check_filepath()
-        with open(self._conn_fpath) as f:
-            data = f.read()
-        self.conf_dict = json.loads(data) if data else {}
-        logging.debug(self.conf_dict)
-        return self.conf_dict
-
-    def _write_conf(self) -> None:
-        # write the conf file
-        self._check_filepath()
-        with open(self._conn_fpath, 'w') as f:
-            json.dump(self.conf_dict, f)
-        logging.debug(self.conf_dict)
-
     def run(self, inputed_code, conn_name) -> dict or None:
-        self.conf_dict = self.read_conf()
+        """operation flow according to inputed_code pass by BaseManagerUI.
+
+        Args:
+            inputed_code: str
+                the relation between inputed_code and object:
+                    need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
+                    need non-existing object: 'ADD'
+            conn_name: str
+
+        Returns:
+            return none or a dict when readed.
+        """
         # inputed_code in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME']
+
+        self.conf_dict = self.read_conf()
         if inputed_code == 'READ':
             # read the _conn_conf from conn_file
-            with open(self.conf_dict[conn_name]) as file_obj:
-                data = file_obj.read() if not self.__prikeyfile else Decrypt(
-                    self.__prikeyfile, file_obj.read())
-            logging.debug('data: %s', data)
-            self._conn_conf = json.loads(data)
-            return self._conn_conf
+            return self._read_conn_conf(conn_name)
         elif inputed_code == 'ADD':
             # write the _conn_conf to conn_file and update self.conf_dict
             self._conn_conf = {
                 'sqlalchemy.url': self._create_conn_url(),
             }
-            self._write_conn(conn_name, self._conn_path)
-            self.conf_dict[conn_name] = str(self._conn_path.joinpath(conn_name + ".txt"))
+            self._write_conn_conf(conn_name)
+            self.conf_dict['conn'][conn_name] = str(self._conf_path.joinpath(conn_name + ".txt"))
         elif inputed_code == 'UPDATE':
             # read the _conn_conf from conn_file and compare with inputed _conn_conf
-            old_conf = self.read(self._conn_path.joinpath(conn_name + '.txt'))
+            old_conf = self._read_conn_conf(conn_name)
             new_conf = {
                 'sqlalchemy.url': self._create_conn_url(),
             }
             self._conn_conf = dict_compare(
                 old_conf, new_conf, diff_autoadd=True)
-            self._write_conn(conn_name, self._conn_path)
+            self._write_conn_conf(conn_name)
         elif inputed_code == 'DELETE':
-            Path(self.conf_dict[conn_name]).unlink()
-            self.conf_dict.pop(conn_name)
+            Path(self.conf_dict['conn'][conn_name]).unlink()
+            self.conf_dict['conn'].pop(conn_name)
         elif inputed_code == 'RENAME':
             # input new name
             tip_words = 'Please input the NEW name for connection[{0}].'.format(conn_name)
             conn_renamed = input_default('localhost', tip_words)
-            while set([conn_renamed]) & set([name for name, path in self.conf_dict.items()]):
+            while set([conn_renamed]) & set([name for name, path in self.conf_dict['conn'].items()]):
                 logging.info('The NEW name[%s] already USED. Please input a NEW ONE.' % conn_renamed)
                 conn_renamed = input_default('localhost', tip_words)
             # rename the txt file of conn_name
-            conn_name_filepath = Path(self.conf_dict[conn_name]).resolve().parent
+            conn_name_filepath = Path(self.conf_dict['conn'][conn_name]).parents[0]
             conn_renamed_filepath = Path(conn_name_filepath).joinpath(conn_renamed + '.txt')
-            Path(self.conf_dict[conn_name]).rename(conn_renamed_filepath)
+            Path(self.conf_dict['conn'][conn_name]).rename(conn_renamed_filepath)
             # update dict
-            self.conf_dict.pop(conn_name)
-            self.conf_dict[conn_renamed] = str(conn_renamed_filepath)
+            self.conf_dict['conn'].pop(conn_name)
+            self.conf_dict['conn'][conn_renamed] = str(conn_renamed_filepath)
             logging.info('Connection[{0}] renamed to {1}.'.format(conn_name, conn_renamed))
 
         self._write_conf()
         logging.info('FileManager run over.')
 
-    def _write_conn(self, conn_name, conn_path) -> None:
+    def _write_conn_conf(self, conn_name) -> None:
         # write the _conn_conf to conn_file
-        with open(conn_path.joinpath(conn_name + '.txt'), 'w') as file_obj:
+        with open(self._conf_path.joinpath(conn_name + '.txt'), 'w') as file_obj:
             if self.__pubkeyfile:
                 file_obj.write(Encrypt(self.__pubkeyfile, json.dumps(self._conn_conf)))
             else:
                 json.dump(self._conn_conf, file_obj)
+
+    def _read_conn_conf(self, conn_name) -> dict:
+        with open(self.conf_dict['conn'][conn_name]) as file_obj:
+            data = file_obj.read() if not self.__prikeyfile else Decrypt(
+                self.__prikeyfile, file_obj.read())
+        logging.debug('data: %s', data)
+        self._conn_conf = json.loads(data)
+        return self._conn_conf
 
     def _create_conn_url(self) -> dict:
         dialect = input_checking_list(
@@ -392,33 +381,6 @@ class FileManager(object):
 
         return conf_url
 
-    @property
-    def conn_path(self):
-        return self._conn_path
-
-    @conn_path.setter
-    def conn_path(self, new_path):
-        old_path = self._conn_path
-        self._conn_path = self._check_path(new_path)
-        if str(old_path) != str(self._conn_path):
-            logging.info("""The default path of conffile changed.
-            From old_path: {0}
-            to new_path: {1}""".format(str(old_path), str(self._conn_path)))
-
-    @property
-    def conf_filename(self):
-        return self._conf_filename
-
-    @conf_filename.setter
-    def conf_filename(self, new_name):
-        if not isinstance(new_name, str):
-            raise TypeError('Expected a string')
-        old_name = self._conf_filename
-        self._conf_filename = str(new_name)
-        logging.info("""The filename of conffile changed.
-        From old_name: {0}
-        to new_name: {1}""".format(str(old_name), str(new_name)))
-
 
 if __name__ == '__main__':
     logging.basicConfig(
@@ -430,26 +392,10 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    how_manager_run = logging.debug("""
-Read  → Existed     → Readed
-      → Not Existed → Read existed or not → Readed
-                                          → To add or not
-
-Update works like Read
-
-Add   → Not Existed → Added
-      → Existed     → Update or not
-
-Del   → Existed     → Deleted
-      → Not Existed → Delete existed or not
-
-Rename works like Del
-
-Clear → Existed     → Cleared
-      → Not Existed → To add or not
-""")
-    manager = ConnUI('D:\\')
-    print(manager.fmgr.conn_path)
+    fmgr = FileManager()
+    CUI = ConnUI(fmgr)
+    # print(fmgr._conf_path)
+    print(CUI.run())
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

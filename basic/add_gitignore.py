@@ -12,7 +12,7 @@
 import sys
 import logging
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parents[1]))
 
 from ConfManager import cwdPath  # noqa: E402
 
