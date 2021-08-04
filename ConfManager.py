@@ -3,8 +3,8 @@
 '''
 @File    :   ConfManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/01
-@Version :   1.0.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
@@ -12,7 +12,7 @@
 import logging
 from basic.input_check import input_default
 from basic.input_check import input_checking_YN
-from BaseClass import BaseFileManager
+from basic.BaseClass import BaseFileManager
 
 
 class ConfManager(BaseFileManager):
@@ -56,7 +56,6 @@ class ConfManager(BaseFileManager):
 conf = ConfManager()
 cwdPath = conf.conf_dict['path']['cwd']
 logging.info('cwdPath: %s', cwdPath)
-
 
 if __name__ == '__main__':
     logging.basicConfig(

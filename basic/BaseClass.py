@@ -3,29 +3,32 @@
 '''
 @File    :   BaseClass.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/02
-@Version :   0.0.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
 
+import sys
 import logging
 import configparser
 # import yaml
 from pathlib import Path
-from basic.input_check import input_checking_list
+sys.path.append(str(Path(__file__).parents[1]))
+
+from basic.input_check import input_checking_list  # noqa: E402
 
 
 class BaseFileManager(object):
     # manage the operation on conf_file
-    def __init__(self, conf_path=Path(__file__).parents[0].joinpath('gitignore\\conf'), case_sens=True):
+    def __init__(self, conf_path=Path(__file__).parents[1].joinpath('gitignore\\conf'), conf_filename='settings.conf', case_sens=True):
         self._case_sens = case_sens
         self._conf_path = Path(conf_path)
-        self._conf_filename = 'settings.conf'
+        self._conf_filename = conf_filename
         self._conf_file = Path(self._conf_path).joinpath(self._conf_filename)
         self.conf_dict = {}
 
-        self._cwd = Path(__file__).parents[0]
+        self._cwd = Path(__file__).parents[1]
         self._default_path = {
             'path': {
                 'confpath': self._cwd,
@@ -99,15 +102,6 @@ class BaseFileManager(object):
         with open(str(self._conf_file), 'w') as configfile:
             conf.write(configfile)
 
-    def _conf2dict(self, config: configparser.ConfigParser) -> dict:
-        # convert the ConfigParser to dict
-        dictionary = {}
-        for section in config.sections():
-            dictionary[section] = {}
-            for option in config.options(section):
-                dictionary[section][option] = config.get(section, option)
-        return dictionary
-
     def read_conf(self) -> dict:
         conf = configparser.ConfigParser()
         if self._case_sens:
@@ -115,7 +109,7 @@ class BaseFileManager(object):
             conf.optionxform = str
 
         conf.read(self._conf_file)
-        converted = self._conf2dict(conf)
+        converted = BaseFileManager.conf2dict(conf)
         self.conf_dict = converted if converted else {}
         return self.conf_dict
 
@@ -146,6 +140,30 @@ class BaseFileManager(object):
             pass
         elif inputed_code == 'RENAME':
             pass
+
+    @staticmethod
+    def conf2dict(config: configparser.ConfigParser) -> dict:
+        # convert the ConfigParser to dict
+        dictionary = {}
+        for section in config.sections():
+            dictionary[section] = {}
+            for option in config.options(section):
+                dictionary[section][option] = config.get(section, option)
+        return dictionary
+
+    @staticmethod
+    def read_conf_from_file(filepath: Path, case_sens: bool = True) -> dict:
+        conf = configparser.ConfigParser()
+        if case_sens:
+            # options for case sensitive
+            conf.optionxform = str
+
+        if Path(filepath).exists() and Path(filepath).is_file():
+            conf.read(filepath)
+            return BaseFileManager.conf2dict(conf)
+        else:
+            logging.info('Error. Invaild filepath to read conf.')
+            return {}
 
     @property
     def conf_path(self):

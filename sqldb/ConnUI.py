@@ -3,28 +3,30 @@
 '''
 @File    :   ConnUI.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/02
-@Version :   1.1.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
+import sys
 import logging
 import json
-from pathlib import Path
 from urllib.parse import quote as urlquote
+from pathlib import Path
+sys.path.append(str(Path(__file__).parents[1]))
 
-from basic.add_gitignore import add_gitignore
-from basic.input_check import input_default
-from basic.input_check import input_pwd
-from basic.input_check import input_checking_list
-from basic.input_check import input_checking_YN
-from basic.RSA_encrypt import CheckRSAKeys
-from basic.RSA_encrypt import Encrypt
-from basic.RSA_encrypt import Decrypt
-from basic.compare import dict_compare
-from BaseClass import BaseManagerUI
-from BaseClass import BaseFileManager
-from ConfManager import cwdPath
+from basic.add_gitignore import add_gitignore  # noqa: E402
+from basic.input_check import input_default  # noqa: E402
+from basic.input_check import input_pwd  # noqa: E402
+from basic.input_check import input_checking_list  # noqa: E402
+from basic.input_check import input_checking_YN  # noqa: E402
+from basic.encrypt import check_rsa_keys  # noqa: E402
+from basic.encrypt import encrypt  # noqa: E402
+from basic.encrypt import decrypt  # noqa: E402
+from basic.compare import dict_compare  # noqa: E402
+from basic.BaseClass import BaseManagerUI  # noqa: E402
+from basic.BaseClass import BaseFileManager  # noqa: E402
+from ConfManager import cwdPath  # noqa: E402
 
 
 class ConnUI(BaseManagerUI):
@@ -214,7 +216,7 @@ class ConnUI(BaseManagerUI):
 class FileManager(BaseFileManager):
     # manage the operation between conn_info_file and conn_txt_file
     def __init__(self, conf_path=cwdPath.joinpath('gitignore\\conn'), file_encrypt=True, pubkeyfile=None, prikeyfile=None, case_sens=True):
-        super().__init__(conf_path=conf_path, case_sens=case_sens)
+        super().__init__(conf_path=conf_path, conf_filename='conn_info.conf', case_sens=case_sens)
 
         self._file_encrypt = file_encrypt
         self.__pubkeyfile = pubkeyfile
@@ -232,7 +234,7 @@ class FileManager(BaseFileManager):
             if pubkeyfile and pubkeyfile:
                 self.__pubkeyfile, self.__prikeyfile = pubkeyfile, prikeyfile
             else:
-                self.__pubkeyfile, self.__prikeyfile = CheckRSAKeys()
+                self.__pubkeyfile, self.__prikeyfile = check_rsa_keys()
         else:
             self.__pubkeyfile, self.__prikeyfile = None, None
 
@@ -341,13 +343,13 @@ class FileManager(BaseFileManager):
         # write the _conn_conf to conn_file
         with open(self._conf_path.joinpath(conn_name + '.txt'), 'w') as file_obj:
             if self.__pubkeyfile:
-                file_obj.write(Encrypt(self.__pubkeyfile, json.dumps(self._conn_conf)))
+                file_obj.write(encrypt(self.__pubkeyfile, json.dumps(self._conn_conf)))
             else:
                 json.dump(self._conn_conf, file_obj)
 
     def _read_conn_conf(self, conn_name) -> dict:
         with open(self.conf_dict['conn'][conn_name]) as file_obj:
-            data = file_obj.read() if not self.__prikeyfile else Decrypt(
+            data = file_obj.read() if not self.__prikeyfile else decrypt(
                 self.__prikeyfile, file_obj.read())
         logging.debug('data: %s', data)
         self._conn_conf = json.loads(data)
@@ -395,8 +397,8 @@ if __name__ == '__main__':
     fmgr = FileManager()
     CUI = ConnUI(fmgr)
     # print(fmgr._conf_path)
-    print(CUI.read_conn_list())
-    # print(CUI.run())
+    # print(CUI.read_conn_list())
+    print(CUI.run())
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

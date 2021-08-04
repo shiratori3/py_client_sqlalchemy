@@ -3,8 +3,8 @@
 '''
 @File    :   to_file.py
 @Author  :   Billy Zhou
-@Time    :   2021/07/30
-@Version :   1.0.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
@@ -41,36 +41,6 @@ def df_to_file(df, to_file, num_to_str=True):
                         )
                         if Path(to_file).exists() and Path(to_csvfile).exists():
                             Path(to_csvfile).unlink()
-
-
-def list_of_dicts_to_df(records_list, col_list_request=[], num_to_str=True, to_file=''):
-    records_array = []
-    col_list = []
-    col_num_list = []
-    for i, key in enumerate(records_list[0].keys()):
-        if col_list_request:
-            if key in col_list_request:
-                col_list.append(key)
-                col_num_list.append(i)
-        else:
-            col_list.append(key)
-    records_array.append(col_list)
-
-    for record_dict in records_list:
-        value_list = []
-        for i, value in enumerate(record_dict.values()):
-            if col_list_request:
-                if i in col_num_list:
-                    value_list.append(value)
-            else:
-                value_list.append(value)
-        records_array.append(value_list)
-
-    df = pd.DataFrame(records_array[1:], columns=records_array[0])
-
-    if to_file:
-        df_to_file(df, to_file, num_to_str)
-    return df
 
 
 if __name__ == '__main__':

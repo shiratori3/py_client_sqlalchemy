@@ -1,0 +1,8 @@
+/.vscode/
+/gitignore/
+*__pycache__/
+*.conf
+*.log
+*.ipynb_checkpoints/
+*.ipynb
+!template.ipynb

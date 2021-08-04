@@ -3,8 +3,8 @@
 '''
 @File    :   func_basic.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/12
-@Version :   1.2.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   init_db.py
+@File    :   SqlDbManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/07/30
-@Version :   1.3.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
@@ -16,8 +16,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import text
 sys.path.append(str(Path(__file__).parents[1]))
 
-from ConnUI import FileManager  # noqa: E402
-from ConnUI import ConnUI  # noqa: E402
+from sqldb.ConnUI import FileManager  # noqa: E402
+from sqldb.ConnUI import ConnUI  # noqa: E402
 
 
 class SqlDbManager(object):

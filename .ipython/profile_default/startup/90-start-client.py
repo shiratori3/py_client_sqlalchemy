@@ -4,8 +4,8 @@
 '''
 @File    :   90-start-client.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/02
-@Version :   1.0.2
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 sys.path.append("D:\pycharm\py_sql_client")  # change the path to your workspace
 
-from sqldb.init_db import SqlDbManager
+from sqldb.SqlDbManager import SqlDbManager
 from sqldb.func_basic import sql_read
 from sqldb.func_query import sql_query
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   RSA_encrypt.py
+@File    :   encrypt.py
 @Author  :   Billy Zhou
-@Time    :   2021/06/14
-@Version :   1.3.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
@@ -20,7 +20,7 @@ from basic.add_gitignore import add_gitignore  # noqa: E402
 from ConfManager import cwdPath  # noqa: E402
 
 
-def CheckRSAKeys(savepath=cwdPath.joinpath('gitignore\\rsa')):
+def check_rsa_keys(savepath=cwdPath.joinpath('gitignore\\rsa')):
     add_gitignore('/gitignore/rsa/', under_gitignore=True)
 
     if not Path(savepath).is_dir():
@@ -33,12 +33,12 @@ def CheckRSAKeys(savepath=cwdPath.joinpath('gitignore\\rsa')):
     prikeyfile = Path(savepath).joinpath('private.pem')
     if not (Path(pubkeyfile).exists() and Path(prikeyfile).exists()):
         logging.warning('Keyfiles unfound. Creating under path(' + str(savepath) + ').')
-        pubkeyfile, prikeyfile = CreateRSAKeys(savepath)
+        pubkeyfile, prikeyfile = create_rsa_keys(savepath)
 
     return pubkeyfile, prikeyfile
 
 
-def CreateRSAKeys(savepath):
+def create_rsa_keys(savepath):
     # 先生成一对密钥，然后保存.pem格式文件
     logging.info('Creating RSA keys.')
     (pubkey, privkey) = rsa.newkeys(2048)
@@ -53,7 +53,7 @@ def CreateRSAKeys(savepath):
     return savepath.joinpath('public.pem'), savepath.joinpath('private.pem')
 
 
-def Encrypt(pubkeyfile, data, savefile=''):
+def encrypt(pubkeyfile, data, savefile=''):
     if not isinstance(data, bytes):
         if os.path.isabs(data):
             if Path(data):
@@ -84,7 +84,7 @@ def Encrypt(pubkeyfile, data, savefile=''):
         return crypto_decode_utf8
 
 
-def Decrypt(prikeyfile, data, savefile=''):
+def decrypt(prikeyfile, data, savefile=''):
     if not isinstance(data, bytes) and os.path.isabs(data):
         if Path(data).is_file():
             with open(data, encoding="utf-8") as df:
@@ -128,19 +128,19 @@ if __name__ == '__main__':
             test_file.write('abc123456789')
     datafile = cwdPath.joinpath('rsa_test.txt')
 
-    pubkeyfile, prikeyfile = CheckRSAKeys()
-    # pubkeyfile, prikeyfile = CheckRSAKeys('rsa')
+    pubkeyfile, prikeyfile = check_rsa_keys()
+    # pubkeyfile, prikeyfile = check_rsa_keys('rsa')
 
     # datafile_encrypted = cwdPath.joinpath('rsa_encrypted.txt')
     # datafile_decrypted = cwdPath.joinpath('rsa_decrypted.txt')
-    # text_encrypted = Encrypt(pubkeyfile, datafile, datafile_encrypted)
-    # text_decryed = Decrypt(
+    # text_encrypted = encrypt(pubkeyfile, datafile, datafile_encrypted)
+    # text_decryed = decrypt(
     #             prikeyfile, datafile_encrypted, datafile_decrypted)
 
     with open(datafile, encoding="utf-8") as df:
         data = df.read()
-    text_encrypted = Encrypt(pubkeyfile, data)
-    text_decryed = Decrypt(prikeyfile, text_encrypted)
+    text_encrypted = encrypt(pubkeyfile, data)
+    text_decryed = decrypt(prikeyfile, text_encrypted)
     logging.info(text_decryed)
 
     logging.debug('==========================================================')

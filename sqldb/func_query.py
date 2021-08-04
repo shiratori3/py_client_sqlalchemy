@@ -3,8 +3,8 @@
 '''
 @File    :   func_query.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/12
-@Version :   1.0.0
+@Time    :   2021/08/04
+@Version :   1.4.0
 @Desc    :   None
 '''
 
@@ -15,6 +15,7 @@ import pandas as pd
 from pathlib import Path
 from sqlalchemy import text
 from sqlalchemy import bindparam
+from sqlalchemy.sql.elements import TextClause
 sys.path.append(str(Path(__file__).parents[1]))
 
 from sqldb.func_basic import sql_read  # noqa: E402
@@ -29,19 +30,22 @@ def sql_query(
         with engine.connect() as conn:
             if sql_db_switch:
                 conn.execute(text(sql_db_switch))
-            if bindparams:
-                stmt = text(sql)
-                for bind_key, params in bindparams.items():
-                    logging.debug("bindparams[{0}]: {1}".format(bind_key, params))
-                    for key, value in params.items():
-                        if key == 'value':
-                            stmt = stmt.bindparams(bindparam(bind_key, value=value))
-                        # elif key == 'type_':
-                        #     stmt = stmt.bindparams(bindparam(bind_key, type_=value))
-                        # elif key == 'unique':
-                        #     stmt = stmt.bindparams(bindparam(bind_key, unique=value))
+            if isinstance(sql, TextClause):
+                stmt = sql
             else:
-                stmt = text(sql)
+                if bindparams:
+                    stmt = text(sql)
+                    for bind_key, params in bindparams.items():
+                        logging.debug("bindparams[{0}]: {1}".format(bind_key, params))
+                        for key, value in params.items():
+                            if key == 'value':
+                                stmt = stmt.bindparams(bindparam(bind_key, value=value))
+                            # elif key == 'type_':
+                            #     stmt = stmt.bindparams(bindparam(bind_key, type_=value))
+                            # elif key == 'unique':
+                            #     stmt = stmt.bindparams(bindparam(bind_key, unique=value))
+                else:
+                    stmt = text(sql)
             logging.debug("stmt: %s", stmt.compile(compile_kwargs={"literal_binds": True}))
             result = conn.execute(stmt)
             # result.keys()  # result.RMKeyView, list-like object
