@@ -2,6 +2,7 @@
 /gitignore/
 *__pycache__/
 *.conf
+*.yaml
 *.log
 *.ipynb_checkpoints/
 *.ipynb

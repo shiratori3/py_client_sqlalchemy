@@ -3,8 +3,8 @@
 '''
 @File    :   compare.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/04
-@Version :   1.4.0
+@Time    :   2021/08/06
+@Version :   1.5.0
 @Desc    :   None
 '''
 
@@ -14,9 +14,9 @@ import logging
 import copy
 from collections.abc import Mapping
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[1]))
+sys.path.append(str(Path(__file__).parents[2]))
 
-from basic.input_check import input_checking_YN  # noqa: E402
+from src.basic.input_check import input_checking_YN  # noqa: E402
 
 
 def dict_compare(

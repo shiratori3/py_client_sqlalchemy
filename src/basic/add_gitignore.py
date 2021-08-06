@@ -12,9 +12,9 @@
 import sys
 import logging
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[1]))
+sys.path.append(str(Path(__file__).parents[2]))
 
-from ConfManager import cwdPath  # noqa: E402
+from src.manager.ConfManager import cwdPath  # noqa: E402
 
 
 def init_gitignore():

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   func_query.py
+@File    :   sql_func.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/04
-@Version :   1.4.0
+@Time    :   2021/08/06
+@Version :   1.5.0
 @Desc    :   None
 '''
 
@@ -16,10 +16,21 @@ from pathlib import Path
 from sqlalchemy import text
 from sqlalchemy import bindparam
 from sqlalchemy.sql.elements import TextClause
-sys.path.append(str(Path(__file__).parents[1]))
+sys.path.append(str(Path(__file__).parents[2]))
 
-from sqldb.func_basic import sql_read  # noqa: E402
-from basic.to_file import df_to_file  # noqa: E402
+from src.basic.to_file import df_to_file  # noqa: E402
+
+
+def sql_read(script_file, encoding='utf8'):
+    try:
+        sql = ''
+        with open(str(script_file), encoding=encoding) as f:
+            for line in f.readlines():
+                sql = sql + line
+        logging.debug('plaintext: %s', sql)
+        return sql
+    except Exception as e:
+        logging.debug("An error occurred. {}".format(e.args[-1]))
 
 
 def sql_query(
@@ -79,8 +90,8 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    from sqldb.init_db import SqlDbManager
-    from ConfManager import cwdPath  # noqa: E402
+    from src.manager.ConfManager import cwdPath  # noqa: E402
+    from src.manager.SqlDbManager import SqlDbManager  # noqa: E402
 
     manager = SqlDbManager()
     manager.set_engine('164', future=True)

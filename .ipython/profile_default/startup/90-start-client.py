@@ -4,8 +4,8 @@
 '''
 @File    :   90-start-client.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/04
-@Version :   1.4.0
+@Time    :   2021/08/06
+@Version :   1.5.0
 @Desc    :   None
 '''
 
@@ -14,9 +14,9 @@ import sys
 from pathlib import Path
 sys.path.append("D:\pycharm\py_sql_client")  # change the path to your workspace
 
-from sqldb.SqlDbManager import SqlDbManager
-from sqldb.func_basic import sql_read
-from sqldb.func_query import sql_query
+from src.manager.SqlDbManager import SqlDbManager
+from src.basic.sql_func import sql_read
+from src.basic.sql_func import sql_query
 
 if __name__ == '__main__':
     import logging
@@ -26,6 +26,9 @@ if __name__ == '__main__':
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
+
+    manager = SqlDbManager()
+    manager.read_conn_list()
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

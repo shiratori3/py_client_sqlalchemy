@@ -3,8 +3,8 @@
 '''
 @File    :   ConnUI.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/04
-@Version :   1.4.0
+@Time    :   2021/08/06
+@Version :   1.5.0
 @Desc    :   None
 '''
 
@@ -13,20 +13,20 @@ import logging
 import json
 from urllib.parse import quote as urlquote
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[1]))
+sys.path.append(str(Path(__file__).parents[2]))
 
-from basic.add_gitignore import add_gitignore  # noqa: E402
-from basic.input_check import input_default  # noqa: E402
-from basic.input_check import input_pwd  # noqa: E402
-from basic.input_check import input_checking_list  # noqa: E402
-from basic.input_check import input_checking_YN  # noqa: E402
-from basic.encrypt import check_rsa_keys  # noqa: E402
-from basic.encrypt import encrypt  # noqa: E402
-from basic.encrypt import decrypt  # noqa: E402
-from basic.compare import dict_compare  # noqa: E402
-from basic.BaseClass import BaseManagerUI  # noqa: E402
-from basic.BaseClass import BaseFileManager  # noqa: E402
-from ConfManager import cwdPath  # noqa: E402
+from src.basic.add_gitignore import add_gitignore  # noqa: E402
+from src.basic.input_check import input_default  # noqa: E402
+from src.basic.input_check import input_pwd  # noqa: E402
+from src.basic.input_check import input_checking_list  # noqa: E402
+from src.basic.input_check import input_checking_YN  # noqa: E402
+from src.basic.encrypt import check_rsa_keys  # noqa: E402
+from src.basic.encrypt import encrypt  # noqa: E402
+from src.basic.encrypt import decrypt  # noqa: E402
+from src.basic.compare import dict_compare  # noqa: E402
+from src.manager.BaseManager import BaseManagerUI  # noqa: E402
+from src.manager.BaseManager import BaseFileManager  # noqa: E402
+from src.manager.ConfManager import cwdPath  # noqa: E402
 
 
 class ConnUI(BaseManagerUI):
@@ -215,8 +215,8 @@ class ConnUI(BaseManagerUI):
 
 class FileManager(BaseFileManager):
     # manage the operation between conn_info_file and conn_txt_file
-    def __init__(self, conf_path=cwdPath.joinpath('gitignore\\conn'), file_encrypt=True, pubkeyfile=None, prikeyfile=None, case_sens=True):
-        super().__init__(conf_path=conf_path, conf_filename='conn_info.conf', case_sens=case_sens)
+    def __init__(self, conf_path=cwdPath.joinpath('gitignore\\conn'), file_encrypt=True, pubkeyfile=None, prikeyfile=None):
+        super().__init__(conf_path=conf_path, conf_filename='conn_info.yaml')
 
         self._file_encrypt = file_encrypt
         self.__pubkeyfile = pubkeyfile
@@ -385,7 +385,7 @@ class FileManager(BaseFileManager):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
+    logging.src.basicConfig(
         level=logging.INFO,
         # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
         # filemode='a',

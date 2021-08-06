@@ -3,8 +3,8 @@
 '''
 @File    :   SqlDbManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/04
-@Version :   1.4.0
+@Time    :   2021/08/06
+@Version :   1.5.0
 @Desc    :   None
 '''
 
@@ -14,10 +14,10 @@ import logging
 from pathlib import Path
 from sqlalchemy import engine_from_config
 from sqlalchemy import text
-sys.path.append(str(Path(__file__).parents[1]))
+sys.path.append(str(Path(__file__).parents[2]))
 
-from sqldb.ConnUI import FileManager  # noqa: E402
-from sqldb.ConnUI import ConnUI  # noqa: E402
+from src.manager.ConnUI import FileManager  # noqa: E402
+from src.manager.ConnUI import ConnUI  # noqa: E402
 
 
 class SqlDbManager(object):

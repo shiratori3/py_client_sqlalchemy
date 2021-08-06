@@ -3,22 +3,26 @@
 '''
 @File    :   ConfManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/04
-@Version :   1.4.0
+@Time    :   2021/08/06
+@Version :   1.5.0
 @Desc    :   None
 '''
 
 
+import sys
 import logging
-from basic.input_check import input_default
-from basic.input_check import input_checking_YN
-from basic.BaseClass import BaseFileManager
+from pathlib import Path
+sys.path.append(str(Path(__file__).parents[2]))
+
+from src.basic.input_check import input_default  # noqa: E402
+from src.basic.input_check import input_checking_YN  # noqa: E402
+from src.manager.BaseManager import BaseFileManager  # noqa: E402
 
 
 class ConfManager(BaseFileManager):
     # manage the configuration file
-    def __init__(self, conf_path='', case_sens=True):
-        super().__init__(conf_path=conf_path, case_sens=case_sens)
+    def __init__(self, conf_path=''):
+        super().__init__(conf_path=conf_path)
 
         # Add cwd to conf_dict
         self.conf_dict['path']['cwd'] = self._cwd
