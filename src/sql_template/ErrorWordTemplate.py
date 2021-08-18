@@ -4,7 +4,7 @@
 @File    :   ErrorWordTemplate.py
 @Author  :   Billy Zhou
 @Time    :   2021/08/17
-@Version :   1.0.0
+@Version :   1.0.2
 @Desc    :   None
 '''
 
@@ -17,49 +17,20 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parents[2]))
 
 from src.manager.ConfManager import conf  # noqa: E402
-from src.basic.sql_func import sql_read  # noqa: E402
+from src.sql_template.SqlTemplate import SqlTemplate  # noqa: E402
 
 
-class ErrorWordTemplate:
+class ErrorWordTemplate(SqlTemplate):
     def __init__(
             self,
             temp_fname: str = 'error_word_L.sql',
             temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('docs\\sql_template'),
             sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('docs\\sqlscript\\error_word')
     ) -> None:
+        super().__init__(temp_folder=temp_folder, sql_folder=sql_folder)
         self.temp_fname = temp_fname
-        self.temp_folder = Path(temp_folder)
-        self.sql_folder = Path(sql_folder)
-        if not self.temp_folder.exists:
-            self.temp_folder.mkdir(parents=True)
-        if not self.temp_folder.exists:
-            self.temp_folder.mkdir(parents=True)
-        self.sql_result = ''
 
-    def read_template(self, temp_fname):
-        if not Path(self.temp_folder).exists():
-            raise ValueError('{} is not a vaild filepath.'.format(self.temp_folder))
-        else:
-            fpath = Path(self.temp_folder).joinpath(temp_fname)
-            if not Path(fpath).exists():
-                raise ValueError('{} is not a vaild filepath.'.format(fpath))
-            else:
-                self.sql_temp = sql_read(fpath)
-                logging.debug("self.sql_temp: {!r}".format(self.sql_temp))
-                return self.sql_temp
-
-    def save_sql(self, sql_name: str):
-        if not self.sql_result:
-            raise ValueError('sql_result is blank')
-        else:
-            if not Path(self.sql_folder).exists():
-                raise ValueError('{} is not a vaild filepath.'.format(self.sql_folder))
-            else:
-                fpath = Path(self.sql_folder).joinpath(sql_name)
-                with open(fpath, 'w', encoding='utf-8') as f:
-                    f.write(self.sql_result)
-
-    def create_error_word_sql(self, word_to_check: str, char_pairs: list = [], poi_pairs: List[tuple] = []):
+    def create_sql(self, word_to_check: str, char_pairs: list = [], poi_pairs: List[tuple] = []):
         word_len = len(word_to_check)
         if word_len < 2:
             raise ValueError('word_to_check[{}] is too short.'.format(word_to_check))
@@ -188,18 +159,18 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    sqlTemp = ErrorWordTemplate()
+    word_sql = ErrorWordTemplate()
 
-    sqlTemp.create_error_word_sql('车辆')
-    sqlTemp.create_error_word_sql('水电费')
-    sqlTemp.create_error_word_sql('期间费用')
-    sqlTemp.create_error_word_sql('可弥补亏损')
-    sqlTemp.create_error_word_sql('股份支付费用', char_pairs=['股份', '支付'])
+    word_sql.create_sql('车辆')
+    word_sql.create_sql('水电费')
+    word_sql.create_sql('期间费用')
+    word_sql.create_sql('可弥补亏损')
+    word_sql.create_sql('股份支付费用', char_pairs=['股份', '支付'])
 
     word = '二、将重分类进损益的其他综合收益：权益法下可转损益的其他综合收益'
-    sqlTemp.print_word_position(word)
-    sqlTemp.create_error_word_sql(word, char_pairs=['将重', '可转', '合收'])
-    sqlTemp.create_error_word_sql(
+    word_sql.print_word_position(word)
+    word_sql.create_sql(word, char_pairs=['将重', '可转', '合收'])
+    word_sql.create_sql(
         word, char_pairs=['将重', '可转', '合收'], poi_pairs=[(3, 4), (22, 23), (30, 31)]
     )
 
