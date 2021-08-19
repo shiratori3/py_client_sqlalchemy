@@ -71,15 +71,11 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    # conf = ConfManager('d:\\')
-    # cwdPath = conf.conf_dict
-    # logging.info('cwdPath: %s', cwdPath)
-
-    # print(conf.read_conf())
-    # print(conf.conf_dict)
-    # conf.add_value('test', 'name', 'amy')
-    # print(conf.read_conf())
-    # print(conf.conf_dict)
+    logging.info(conf.read_conf())
+    logging.info(conf.conf_dict)
+    conf.add_value('test', 'name', 'amy')
+    logging.info(conf.read_conf())
+    logging.info(conf.conf_dict)
 
     logging.debug('==========================================================')
     logging.debug('end DEBUG')

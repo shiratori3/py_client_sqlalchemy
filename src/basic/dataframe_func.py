@@ -1,18 +1,45 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   to_file.py
+@File    :   dataframe_func.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/06
-@Version :   1.5.0
+@Time    :   2021/08/19
+@Version :   1.6.0
 @Desc    :   None
 '''
 
 
+import sys
 import logging
 import pandas as pd
 import pyexcel as pe
+from typing import List
 from pathlib import Path
+sys.path.append(str(Path(__file__).parents[2]))
+
+
+def records_to_df(
+        records_list: List[dict], col_list_request: List[str] = [],
+        to_file: str = '', num_to_str: bool = True,
+        not_in_dict: dict = {}, sample_num: int = 0):
+    logging.info("len(records_list): %s", len(records_list))
+
+    df_full = pd.DataFrame.from_records(records_list)
+    df = df_full[col_list_request] if col_list_request else df_full
+    for col_name, _ in not_in_dict.items():
+        if col_name not in df.columns:
+            not_in_dict.pop(col_name)
+            logging.warning('Invaild col_name[{}] in not_in_dict for dataframe. Abandoned it.'.format(col_name))
+
+    df_filtered = df if not not_in_dict else df[[x not in col_list for col, col_list in not_in_dict.items() for x in df[col]]]
+    logging.info("len(df_filtered): %s", len(df_filtered))
+
+    df_filtered_sampled = df_filtered.sample(n=sample_num) if sample_num else df_filtered
+    logging.info("len(df_filtered_sampled): %s", len(df_filtered_sampled))
+
+    if to_file:
+        df_to_file(df_filtered_sampled, to_file, num_to_str)
+    return df_filtered
 
 
 def df_to_file(df, to_file, num_to_str=True):
@@ -46,11 +73,24 @@ def df_to_file(df, to_file, num_to_str=True):
 if __name__ == '__main__':
     logging.basicConfig(
         level=logging.INFO,
+        # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
+        # filemode='a',
         format='%(asctime)s %(name)s %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S')
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
+    import json
+    from src.manager.ConfManager import cwdPath
+
+    # test list of records_to_df
+    with open(cwdPath.joinpath('res\\pro\\response.txt'), encoding='utf-8') as f:
+        data = json.loads(f.read())
+    logging.info(data['data']['records'][:3])
+    df = pd.DataFrame.from_records(data['data']['records'])
+    logging.info(df[['id', 'status', 'subjectName', 'enableTypeName']].head(10))
+
+    # test df_to_file
     import numpy as np
     rng = np.random.default_rng(0)
     df = pd.DataFrame(rng.random(100))

@@ -18,7 +18,7 @@ from sqlalchemy import bindparam
 from sqlalchemy.sql.elements import TextClause
 sys.path.append(str(Path(__file__).parents[2]))
 
-from src.basic.to_file import df_to_file  # noqa: E402
+from src.basic.dataframe_func import df_to_file  # noqa: E402
 
 
 def sql_read(script_file, encoding='utf8'):
@@ -68,7 +68,7 @@ def sql_query(
                 conn.commit()
             else:
                 row = result.fetchall() if fetchall else result.fetchone()
-                logging.debug("row: %s", row)
+                logging.info("row: %s", row)
 
                 if return_df or to_file:
                     df = pd.DataFrame(row, columns=list(result.keys()))
@@ -91,14 +91,14 @@ if __name__ == '__main__':
     logging.debug('==========================================================')
 
     from src.manager.ConfManager import cwdPath  # noqa: E402
-    from src.manager.SqlDbManager import SqlDbManager  # noqa: E402
+    from src.manager.EngineManager import EngineManager  # noqa: E402
 
-    manager = SqlDbManager()
+    manager = EngineManager()
     manager.set_engine('164', future=True)
     engine_164 = manager.get_engine('164')
 
-    sql = sql_read(cwdPath.joinpath(
-        'gitignore\\sqlscript\\test_year.txt'))
+    # testing sql_read and sql_query
+    sql = sql_read(cwdPath.joinpath('res\\dev\\test_year.txt'))
     outfile = 'D:\\test.xlsx'
     sql_result = sql_query(
         engine_164, sql=sql, sql_db_switch='USE JYFIN', return_df=False, to_file=outfile)

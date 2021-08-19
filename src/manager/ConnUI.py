@@ -15,18 +15,16 @@ from urllib.parse import quote as urlquote
 from pathlib import Path
 sys.path.append(str(Path(__file__).parents[2]))
 
-from src.basic.add_gitignore import add_gitignore  # noqa: E402
 from src.basic.input_check import input_default  # noqa: E402
 from src.basic.input_check import input_pwd  # noqa: E402
 from src.basic.input_check import input_checking_list  # noqa: E402
 from src.basic.input_check import input_checking_YN  # noqa: E402
-from src.basic.encrypt import check_rsa_keys  # noqa: E402
-from src.basic.encrypt import encrypt  # noqa: E402
-from src.basic.encrypt import decrypt  # noqa: E402
 from src.basic.compare import dict_compare  # noqa: E402
 from src.manager.BaseManager import BaseManagerUI  # noqa: E402
 from src.manager.BaseManager import BaseFileManager  # noqa: E402
+from src.manager.Crypt import crypter  # noqa: E402
 from src.manager.ConfManager import cwdPath  # noqa: E402
+from src.manager.Ignorer import gitignorer  # noqa: E402
 
 
 class ConnUI(BaseManagerUI):
@@ -59,14 +57,16 @@ class ConnUI(BaseManagerUI):
         """operate according to inputed_code.
         Operation flow of each inputed_code like this:
             Read  → Existed     → Readed
-                → Not Existed → Read existed or not → Readed
-                                                    → To add or not
+                  → Not Existed → Read existed or not → Readed
+                                                      → To add or not
             Update works like Read
+
             Add   → Not Existed → Added
                   → Existed     → Update or not
             Del   → Existed     → Deleted
                   → Not Existed → Delete existed or not
             Rename works like Del
+
             Clear → Existed     → Cleared
                   → Not Existed → To add or not
 
@@ -215,12 +215,10 @@ class ConnUI(BaseManagerUI):
 
 class FileManager(BaseFileManager):
     # manage the operation between conn_info_file and conn_txt_file
-    def __init__(self, conf_path=cwdPath.joinpath('gitignore\\conn'), file_encrypt=True, pubkeyfile=None, prikeyfile=None):
+    def __init__(self, conf_path=cwdPath.joinpath('conf\\conn'), file_encrypt=True, crypter=crypter):
         super().__init__(conf_path=conf_path, conf_filename='conn_info.yaml')
 
         self._file_encrypt = file_encrypt
-        self.__pubkeyfile = pubkeyfile
-        self.__prikeyfile = prikeyfile
         self._support_dialect = ['mysql', 'mssql', 'sqlite']
         self._support_driver = {
             'mysql': ['pymysql', 'mysqldb', 'no driver'],
@@ -231,18 +229,20 @@ class FileManager(BaseFileManager):
 
         # decide whether to encrypt file
         if self._file_encrypt:
-            if pubkeyfile and pubkeyfile:
-                self.__pubkeyfile, self.__prikeyfile = pubkeyfile, prikeyfile
+            if crypter:
+                self.__crypter = crypter
             else:
-                self.__pubkeyfile, self.__prikeyfile = check_rsa_keys()
-        else:
-            self.__pubkeyfile, self.__prikeyfile = None, None
+                from src.manager.Crypt import Crypt  # noqa: E402
+                self.__crypter = Crypt()
 
         # check conn_dict while init
         self._check_conf_dict()
 
         # check ignore
-        add_gitignore('/gitignore/conn/', under_gitignore=True)
+        if Path(conf_path) == cwdPath.joinpath('conf\\conn'):
+            gitignorer.add_gitignore('/conf/conn/')
+        else:
+            gitignorer.add_gitignore(str(conf_path))
 
     def _check_conf_dict(self) -> None:
         """check the conf_dict to keep the file in path and filepath in dict correct"""
@@ -342,15 +342,14 @@ class FileManager(BaseFileManager):
     def _write_conn_conf(self, conn_name) -> None:
         # write the _conn_conf to conn_file
         with open(self._conf_path.joinpath(conn_name + '.txt'), 'w') as file_obj:
-            if self.__pubkeyfile:
-                file_obj.write(encrypt(self.__pubkeyfile, json.dumps(self._conn_conf)))
+            if self._file_encrypt:
+                file_obj.write(self.__crypter.encrypt(json.dumps(self._conn_conf)))
             else:
                 json.dump(self._conn_conf, file_obj)
 
     def _read_conn_conf(self, conn_name) -> dict:
         with open(self.conf_dict['conn'][conn_name]) as file_obj:
-            data = file_obj.read() if not self.__prikeyfile else decrypt(
-                self.__prikeyfile, file_obj.read())
+            data = file_obj.read() if not self._file_encrypt else self.__crypter.decrypt(file_obj.read())
         logging.debug('data: %s', data)
         self._conn_conf = json.loads(data)
         return self._conn_conf
@@ -385,7 +384,7 @@ class FileManager(BaseFileManager):
 
 
 if __name__ == '__main__':
-    logging.src.basicConfig(
+    logging.basicConfig(
         level=logging.INFO,
         # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
         # filemode='a',
@@ -396,8 +395,7 @@ if __name__ == '__main__':
 
     fmgr = FileManager()
     CUI = ConnUI(fmgr)
-    # print(fmgr._conf_path)
-    # print(CUI.read_conn_list())
+    print(fmgr._conf_path)
     print(CUI.run())
 
     logging.debug('==========================================================')

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   SqlDbManager.py
+@File    :   EngineManager.py
 @Author  :   Billy Zhou
 @Time    :   2021/08/06
 @Version :   1.5.0
@@ -20,14 +20,14 @@ from src.manager.ConnUI import FileManager  # noqa: E402
 from src.manager.ConnUI import ConnUI  # noqa: E402
 
 
-class SqlDbManager(object):
+class EngineManager(object):
     def __init__(self, conn_ui=False):
         self._engine_dict = {}
-        if not conn_ui:
-            self.CUI = ConnUI(FileManager(file_encrypt=True, pubkeyfile=None, prikeyfile=None))
-        else:
+        if conn_ui:
             # use the inputed CUI
             self.CUI = conn_ui
+        else:
+            self.CUI = ConnUI(FileManager(file_encrypt=True))
 
     def run_CUI(self, inputed_code='', conn_name=''):
         self.CUI.run()
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    manager = SqlDbManager()
+    manager = EngineManager()
     manager.read_conn_list()
     manager.set_engine('164', future=True)
     engine_164 = manager.get_engine('164')

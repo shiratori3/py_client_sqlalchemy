@@ -26,7 +26,7 @@ from src.basic.input_check import input_checking_list  # noqa: E402
 
 class BaseFileManager(object):
     # manage the operation on conf_file
-    def __init__(self, conf_path=Path(__file__).parents[2].joinpath('gitignore\\conf'), conf_filename='settings.yaml'):
+    def __init__(self, conf_path=Path(__file__).parents[2].joinpath('conf'), conf_filename='settings.yaml'):
         self._conf_path = Path(conf_path)
         self._conf_filename = conf_filename
         self._conf_file = Path(self._conf_path).joinpath(self._conf_filename)

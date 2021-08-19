@@ -4,8 +4,8 @@
 '''
 @File    :   90-start-client.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/06
-@Version :   1.5.0
+@Time    :   2021/08/19
+@Version :   1.6.0
 @Desc    :   None
 '''
 
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 sys.path.append("D:\pycharm\py_sql_client")  # change the path to your workspace
 
-from src.manager.SqlDbManager import SqlDbManager
+from src.manager.EngineManager import EngineManager
 from src.basic.sql_func import sql_read
 from src.basic.sql_func import sql_query
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     logging.debug('start DEBUG')
     logging.debug('==========================================================')
 
-    manager = SqlDbManager()
+    manager = EngineManager()
     manager.read_conn_list()
 
     logging.debug('==========================================================')

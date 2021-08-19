@@ -24,8 +24,8 @@ class ErrorWordTemplate(SqlTemplate):
     def __init__(
             self,
             temp_fname: str = 'error_word_L.sql',
-            temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('docs\\sql_template'),
-            sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('docs\\sqlscript\\error_word')
+            temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\pro\\sql_template'),
+            sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\pro\\sqlscript\\error_word')
     ) -> None:
         super().__init__(temp_folder=temp_folder, sql_folder=sql_folder)
         self.temp_fname = temp_fname

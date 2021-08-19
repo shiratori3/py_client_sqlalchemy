@@ -21,8 +21,8 @@ from src.basic.sql_func import sql_read  # noqa: E402
 class SqlTemplate:
     def __init__(
             self,
-            temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('docs\\sql_template'),
-            sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('docs\\sqlscript')
+            temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\dev\\sql_template'),
+            sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\dev\\sqlscript')
     ) -> None:
         self.temp_folder = Path(temp_folder)
         self.sql_folder = Path(sql_folder)
