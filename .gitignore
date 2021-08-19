@@ -3,6 +3,8 @@
 *.ipynb_checkpoints/
 *.ipynb
 /conf/
+/conf/rsa/
+/conf/conn/
 *.yaml
 /log/
 *.log
@@ -10,5 +12,4 @@
 /bin/*.py
 !template.*
 !logging.yaml
-/conf/rsa/
-/conf/conn/
+!template_post.py
