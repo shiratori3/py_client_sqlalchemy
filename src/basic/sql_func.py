@@ -68,7 +68,7 @@ def sql_query(
                 conn.commit()
             else:
                 row = result.fetchall() if fetchall else result.fetchone()
-                logging.info("row: %s", row)
+                logging.debug("row: %s", row)
 
                 if return_df or to_file:
                     df = pd.DataFrame(row, columns=list(result.keys()))
