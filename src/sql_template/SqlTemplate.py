@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   ErrorWordTemplate.py
+@File    :   SqlTemplate.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
 @Desc    :   None
 '''
 

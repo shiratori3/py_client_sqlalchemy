@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   add_gitignore.py
+@File    :   Ignorer.py
 @Author  :   Billy Zhou
 @Time    :   2021/08/20
 @Desc    :   None

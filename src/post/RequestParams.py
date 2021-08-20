@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   prepare_post.py
+@File    :   RequestParams.py
 @Author  :   Billy Zhou
 @Time    :   2021/08/20
 @Desc    :   None
