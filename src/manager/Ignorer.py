@@ -3,20 +3,18 @@
 '''
 @File    :   add_gitignore.py
 @Author  :   Billy Zhou
-@Time    :   2021/06/15
-@Version :   1.1.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
-log = logging.getLogger(__name__)
+from pathlib import Path
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
 
-from pathlib import Path  # noqa: E402
-sys.path.append(str(Path(__file__).parents[2]))
-
-from src.manager.ConfManager import cwdPath  # noqa: E402
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
 
 
 class Ignorer:
@@ -37,6 +35,8 @@ class Ignorer:
 
         # read from gitignore file
         self.ignorelist = self.read_gitignore()
+
+        log.debug('Ignorer inited')
 
     def read_gitignore(self):
         self.ignorelist = []
@@ -67,19 +67,8 @@ class Ignorer:
                 log.info('{} added to .gitignore'.format(ignore_path))
 
 
-gitignorer = Ignorer()
-
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
+    gitignorer = Ignorer()
     gitignorer.read_gitignore()
     gitignorer.add_gitignore('/rsa/')
-    log.info(gitignorer.savepath.parts)
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
+    log.info("gitignorer.savepath.parts: {}".format(gitignorer.savepath.parts))

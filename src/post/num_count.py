@@ -3,24 +3,26 @@
 '''
 @File    :   num_count.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/18
-@Version :   1.6.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
-import datetime
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[2]))
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
 
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
+
+import datetime
 from src.post.RequestParams import RequestParams  # noqa: E402
 
 
 def num_count(request_params: RequestParams, payload_dicts: dict, diff_count=False):
     run_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    logging.info("Preparing requests at {}.".format(run_time))
+    log.info("Preparing requests at {}.".format(run_time))
 
     response_list = []
     url_type_list = []
@@ -34,7 +36,7 @@ def num_count(request_params: RequestParams, payload_dicts: dict, diff_count=Fal
             )
         )
         url_type_list.append(url_type)
-    logging.info("responses get.")
+    log.info("responses get.")
 
     total_list = []
     total_success = True
@@ -47,25 +49,18 @@ def num_count(request_params: RequestParams, payload_dicts: dict, diff_count=Fal
             else:
                 total = False
                 total_success = False
-            logging.info("total: %s", total)
+            log.info("total: %s", total)
             total_list.append(total)
 
     if diff_count:
         total_diff = total_list[0] - total_list[1]
-        logging.info("total_diff: %s", total_diff)
+        log.info("total_diff: %s", total_diff)
 
     if total_success:
         return (run_time, total_list[0], total_list[1])
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     request_params = RequestParams()
     request_params.read_conf('settings.yaml')
 
@@ -76,6 +71,3 @@ if __name__ == '__main__':
         },
         diff_count=False
     )
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')

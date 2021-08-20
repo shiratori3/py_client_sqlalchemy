@@ -6,7 +6,7 @@ Jupyter的python内核实际为Ipython，因此需要在C:\Users\yourusrname\.ip
 
 文件名格式为XX-filename.py，XX前缀为纯数字，代表加载顺序。下文为该目录的README文件内容，解释了如何读取。
 
-```
+```[]
 This is the IPython startup directory
 
 .py and .ipy files in this directory will be run *prior* to any code or files specified via the exec_lines or exec_files configurables whenever you load this profile.

@@ -3,22 +3,24 @@
 '''
 @File    :   sql_func.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/06
-@Version :   1.5.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
-import pandas as pd
 from pathlib import Path
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger
+log = logger.get_logger(__name__)
+
+import pandas as pd
 from sqlalchemy import text
 from sqlalchemy import bindparam
 from sqlalchemy.sql.elements import TextClause
-sys.path.append(str(Path(__file__).parents[2]))
-
-from src.basic.dataframe_func import df_to_file  # noqa: E402
+from src.basic.dataframe_func import df_to_file
 
 
 def sql_read(script_file, encoding='utf8'):
@@ -27,10 +29,10 @@ def sql_read(script_file, encoding='utf8'):
         with open(str(script_file), encoding=encoding) as f:
             for line in f.readlines():
                 sql = sql + line
-        logging.debug('plaintext: %s', sql)
+        log.debug('plaintext: %s', sql)
         return sql
     except Exception as e:
-        logging.debug("An error occurred. {}".format(e.args[-1]))
+        log.debug("An error occurred. {}".format(e.args[-1]))
 
 
 def sql_query(
@@ -47,7 +49,7 @@ def sql_query(
                 if bindparams:
                     stmt = text(sql)
                     for bind_key, params in bindparams.items():
-                        logging.debug("bindparams[{0}]: {1}".format(bind_key, params))
+                        log.debug("bindparams[{0}]: {1}".format(bind_key, params))
                         for key, value in params.items():
                             if key == 'value':
                                 stmt = stmt.bindparams(bindparam(bind_key, value=value))
@@ -57,7 +59,7 @@ def sql_query(
                             #     stmt = stmt.bindparams(bindparam(bind_key, unique=value))
                 else:
                     stmt = text(sql)
-            logging.debug("stmt: %s", stmt.compile(compile_kwargs={"literal_binds": True}))
+            log.debug("stmt: %s", stmt.compile(compile_kwargs={"literal_binds": True}))
             result = conn.execute(stmt)
             # result.keys()  # result.RMKeyView, list-like object
             # result.all()  # list of tuple, same to fetchall()
@@ -68,7 +70,7 @@ def sql_query(
                 conn.commit()
             else:
                 row = result.fetchall() if fetchall else result.fetchone()
-                logging.debug("row: %s", row)
+                log.debug("row: %s", row)
 
                 if return_df or to_file:
                     df = pd.DataFrame(row, columns=list(result.keys()))
@@ -77,20 +79,12 @@ def sql_query(
 
                 return df if return_df else row
     except Exception as e:
-        logging.debug("An error occurred. {}".format(e.args[-1]))
+        log.debug("An error occurred. {}".format(e.args[-1]))
         if 'conn' in dir():
             conn.close()
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
-    from src.manager.ConfManager import cwdPath  # noqa: E402
     from src.manager.EngineManager import EngineManager  # noqa: E402
 
     manager = EngineManager()
@@ -102,7 +96,4 @@ if __name__ == '__main__':
     outfile = 'D:\\test.xlsx'
     sql_result = sql_query(
         engine_164, sql=sql, sql_db_switch='USE JYFIN', return_df=False, to_file=outfile)
-    logging.info(sql_result)
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
+    log.info(sql_result)

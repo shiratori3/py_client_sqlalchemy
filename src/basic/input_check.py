@@ -3,13 +3,11 @@
 '''
 @File    :   input_check.py
 @Author  :   Billy Zhou
-@Time    :   2021/06/14
-@Version :   1.3.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
-import logging
 import getpass
 
 
@@ -66,20 +64,12 @@ def input_checking_YN(tip_words='Please input words.', default_Y=True):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
+    import logging
 
-    # logging.info(input_default('abc'))
-    # logging.info(input_pwd())
-    # logging.info(input_checking_YN())
-    # logging.info(input_checking_list(['a', 'b', 'c', 'd']))
-    # logging.info(input_checking_list(['a']))
-    # logging.info(input_checking_list([]))
-    # logging.info(input_checking_list('a'))
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
+    logging.info("return : {}".format(input_default('abc')))
+    logging.info("return : {}".format(input_pwd()))
+    logging.info("return : {}".format(input_checking_YN()))
+    logging.info("return : {}".format(input_checking_list(['a', 'b', 'c', 'd'])))
+    logging.info("return : {}".format(input_checking_list(['a'])))
+    logging.info("return : {}".format(input_checking_list([])))
+    logging.info("return : {}".format(input_checking_list('a')))

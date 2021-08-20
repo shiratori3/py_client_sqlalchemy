@@ -3,30 +3,23 @@
 '''
 @File    :   template.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/06
-@Version :   1.5.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
+from pathlib import Path
+cwdPath = Path(__file__).parents[1]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
+
 import time
 import datetime
-import logging
-from pathlib import Path
-sys.path.append(str(Path(__file__).parents[1]))
-
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
-        # filemode='a',
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     from src.post.num_count import num_count
     from src.post.pool_change import pool_change
     from src.post.post_to_excel import post_to_excel
@@ -46,14 +39,14 @@ if __name__ == '__main__':
 
         hour_now = datetime.datetime.now().strftime("%H")
         print(time.time())
-        logging.info("hour_now: {0}".format(hour_now))
+        log.info("hour_now: {0}".format(hour_now))
         if True and int(hour_now) > 12:
-            logging.info("Morning is gone.")
+            log.info("Morning is gone.")
             # 12:00:00 后不再切换池子及导出数据
             to_change = False
             to_excel = False
         else:
-            logging.info("Good morning.")
+            log.info("Good morning.")
 
         if to_count:
             # 进度查询的控制开关
@@ -144,6 +137,3 @@ if __name__ == '__main__':
                     max_page=100,
                     not_in_dict={}
                 )
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')

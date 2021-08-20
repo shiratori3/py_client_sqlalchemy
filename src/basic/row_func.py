@@ -3,17 +3,22 @@
 '''
 @File    :   row_func.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/06
-@Version :   1.5.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
-import logging
+import sys
+from pathlib import Path
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger
+log = logger.get_logger(__name__)
 
 
 def row_func(row, func, *args, **kwargs):
-    logging.debug('row: %s', row)
+    log.debug('row: %s', row)
     row_cor = ()
     if row:
         # cursor.fetchall() return all rows as a list of tuples
@@ -24,11 +29,11 @@ def row_func(row, func, *args, **kwargs):
         elif isinstance(row, tuple):
             row_cor = row_tuple_func(row, func, *args, **kwargs)
         else:
-            logging.error('Error. Unexpected row type.')
+            log.error('Error. Unexpected row type.')
     else:
-        logging.info('Blank row.')
+        log.info('Blank row.')
 
-    logging.debug('row_cor: %s', row_cor)
+    log.debug('row_cor: %s', row_cor)
     return row_cor
 
 
@@ -40,41 +45,34 @@ def row_fecthall(row, func, *args, **kwargs):
             row_cor.append(row_tuple_func(
                 row_tuple, func, *args, **kwargs))
     else:
-        logging.error('Error. Unexpected row[0] type.')
+        log.error('Error. Unexpected row[0] type.')
     return row_cor
 
 
 def row_tuple_func(row_tuple, func, *args, **kwargs):
     row_tuple_cor = ()
-    logging.debug('row_tuple: %s', row_tuple)
+    log.debug('row_tuple: %s', row_tuple)
     length = len(row_tuple)
-    logging.debug('length: %s', length)
+    log.debug('length: %s', length)
     for i, j in enumerate(row_tuple):
         num_cor, value_cor = func(
             (None, j), num_now=i + 1, length=length,
             *args, **kwargs)
-        logging.debug('num: %s', i)
-        logging.debug('value: %s', j)
-        logging.debug('value_cor: %s', value_cor)
+        log.debug('num: %s', i)
+        log.debug('value: %s', j)
+        log.debug('value_cor: %s', value_cor)
         row_tuple_cor += (value_cor, )
     return row_tuple_cor
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     row_fecthall_tuple = [('sdsaewe', 14575), (1122, 'awewe')]
     row_tuple = ('sdsaewe', 14575)
 
     def row_func_test(basic_data, num_now, length):
-        logging.info('basic_data: %s', basic_data)
-        logging.info('num_now: %s', num_now)
-        logging.info('length: %s', length)
+        log.info('basic_data: %s', basic_data)
+        log.info('num_now: %s', num_now)
+        log.info('length: %s', length)
         if isinstance(basic_data[1], int):
             print(basic_data[1])
         else:
@@ -82,6 +80,3 @@ if __name__ == '__main__':
         return basic_data
 
     row_func(row_fecthall_tuple, row_func_test)
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')

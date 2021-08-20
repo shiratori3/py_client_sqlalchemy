@@ -3,20 +3,23 @@
 '''
 @File    :   ErrorWordTemplate.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/17
-@Version :   1.0.2
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
-from collections import Counter
+from pathlib import Path
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
+
 from typing import List
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[2]))
-
-from src.manager.ConfManager import conf  # noqa: E402
+from collections import Counter
+from src.manager.main import conf  # noqa: E402
 from src.sql_template.SqlTemplate import SqlTemplate  # noqa: E402
 
 
@@ -78,7 +81,7 @@ class ErrorWordTemplate(SqlTemplate):
                         word_concat += ']'
                 word_concat += '_' * (word_len - len(word_concat) + 4)
                 word_list.append(word_concat)
-            logging.info("word_list: {}".format(word_list))
+            log.debug("word_list: {}".format(word_list))
 
             # delete -- according to the list length
             self.sql_temp_checked = self.sql_temp
@@ -91,7 +94,7 @@ class ErrorWordTemplate(SqlTemplate):
 
             # create sql
             self.sql_result = self.sql_temp_checked.format(word_to_check=word_to_check, word_list=word_list)
-            logging.debug("self.sql_result: {}".format(self.sql_result))
+            log.debug("self.sql_result: {}".format(self.sql_result))
             self.save_sql(word_to_check + '.sql')
         elif word_len > 6:
             # use Long template
@@ -107,7 +110,7 @@ class ErrorWordTemplate(SqlTemplate):
                     if char in ''.join(char_pairs) and need[char] > 0:
                         pairs_dict[poi] = char
                         need[char] -= 1
-            logging.debug("pairs_dict: {}".format(pairs_dict))
+            log.debug("pairs_dict: {}".format(pairs_dict))
             pos_list = list(pairs_dict.keys())
             char_list = list(list(pairs_dict.values()))
 
@@ -125,7 +128,7 @@ class ErrorWordTemplate(SqlTemplate):
             if len(pos_list) > 10:
                 self.sql_temp_checked = self.sql_temp_checked.replace(
                     '--AND (SUBSTRING(A.DATA, {pos_list[10', 'AND (SUBSTRING(A.DATA, {pos_list[11')
-            logging.debug("sql_temp_checked: {}".format(self.sql_temp_checked))
+            log.debug("sql_temp_checked: {}".format(self.sql_temp_checked))
 
             # template sql only support input num equal to 12
             if len(pos_list) > 12:
@@ -134,31 +137,23 @@ class ErrorWordTemplate(SqlTemplate):
             else:
                 pos_list += [''] * (12 - len(pos_list))
                 char_list += [''] * (12 - len(char_list))
-            logging.info("pos_list: {}".format(pos_list))
-            logging.info("char_list: {}".format(char_list))
+            log.debug("pos_list: {}".format(pos_list))
+            log.debug("char_list: {}".format(char_list))
 
             # create sql
             self.sql_result = self.sql_temp_checked.format(word_to_check=word_to_check, pos_list=pos_list, char_list=char_list)
-            logging.debug("self.sql_result: {}".format(self.sql_result))
+            log.debug("self.sql_result: {}".format(self.sql_result))
             self.save_sql(word_to_check + '.sql')
 
     @staticmethod
     def print_word_position(word: str) -> None:
+        print('word[{0}] start split'.format(word))
         for poi, char in enumerate(word, 1):
             print('char[{0}] in position: {1}'.format(char, poi))
         print('word[{0}] splited over'.format(word))
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
-        # filemode='a',
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     word_sql = ErrorWordTemplate()
 
     word_sql.create_sql('车辆')
@@ -173,6 +168,3 @@ if __name__ == '__main__':
     word_sql.create_sql(
         word, char_pairs=['将重', '可转', '合收'], poi_pairs=[(3, 4), (22, 23), (30, 31)]
     )
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')

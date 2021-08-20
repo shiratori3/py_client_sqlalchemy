@@ -4,8 +4,7 @@
 '''
 @File    :   start.py
 @Author  :   Billy Zhou
-@Time    :   2021/03/12
-@Version :   1.1.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
@@ -37,15 +36,9 @@ InteractiveShell.ast_node_interactivity = 'all'
 
 
 if __name__ == '__main__':
-    import logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     import os
+    import logging
+    logging.basicConfig(level=logging.INFO)
     from pathlib import Path
 
     usr_path = os.path.expanduser('~')
@@ -54,6 +47,3 @@ if __name__ == '__main__':
 
     logging.info('dir: {0}'.format(dir()))
     logging.info('globals: {0}'.format(globals()))
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')

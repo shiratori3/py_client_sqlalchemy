@@ -3,48 +3,56 @@
 '''
 @File    :   Crypt.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/18
-@Version :   1.0.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
-import os
 import sys
-import logging
+from pathlib import Path
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
+
+import os
 import rsa
 import base64
-from pathlib import Path
-sys.path.append(str(Path(__file__).parents[2]))
-
-from src.manager.ConfManager import cwdPath  # noqa: E402
-from src.manager.Ignorer import gitignorer  # noqa: E402
+from src.manager.Ignorer import Ignorer  # noqa: E402
 
 
 class Crypt:
     def __init__(
             self, savepath: Path = cwdPath.joinpath('conf\\rsa'),
             pubkeyfile: Path = cwdPath.joinpath('conf\\rsa').joinpath('public.pem'),
-            prikeyfile: Path = cwdPath.joinpath('conf\\rsa').joinpath('private.pem')
+            prikeyfile: Path = cwdPath.joinpath('conf\\rsa').joinpath('private.pem'),
+            gitignorer: Ignorer = None
     ) -> None:
         self.savepath = savepath
         self.pubkeyfile = pubkeyfile
         self.prikeyfile = prikeyfile
 
         # check ignore
-        if Path(savepath) == cwdPath.joinpath('conf\\rsa'):
-            gitignorer.add_gitignore('/conf/rsa/')
-        else:
-            gitignorer.add_gitignore(str(savepath))
+        if not gitignorer:
+            self._gitignorer = Ignorer()
+        if gitignorer:
+            self._gitignorer = gitignorer
+            if Path(savepath) == cwdPath.joinpath('conf\\rsa'):
+                self._gitignorer.add_gitignore('/conf/rsa/')
+            else:
+                self._gitignorer.add_gitignore(str(savepath))
 
         # check rsa_keys
         self.check_rsa_keys()
 
+        log.debug('Crypt inited')
+
     def check_rsa_keys(self):
         if not (Path(self.pubkeyfile).exists() and Path(self.prikeyfile).exists()):
-            logging.warning('Keyfiles unfound. Creating under path[{}].'.format(self.savepath))
+            log.warning('Keyfiles unfound. Creating under path[{}].'.format(self.savepath))
 
             if not Path(self.savepath).exists():
-                logging.warning('Unvaild savepath. Use the default path[{}].'.format(self.savepath))
+                log.warning('Unvaild savepath. Use the default path[{}].'.format(self.savepath))
                 self.savepath = cwdPath.joinpath('docs\\dev\\rsa')
                 Path.mkdir(self.savepath, parents=True)
             self.pubkeyfile, self.prikeyfile = self._create_rsa_keys(self.savepath)
@@ -53,14 +61,12 @@ class Crypt:
 
     def _create_rsa_keys(self, fpath: Path):
         # create a pair of keys and then save to .pem file
-        logging.info('Creating RSA keys.')
+        log.info('Creating RSA keys.')
         (pubkey, privkey) = rsa.newkeys(2048)
 
         with open(Path(fpath).joinpath('public.pem'), 'w+') as pubfile:
-            logging.debug(type(pubkey.save_pkcs1()))
             pubfile.write(pubkey.save_pkcs1().decode('utf-8'))
         with open(Path(fpath).joinpath('private.pem'), 'w+') as prifile:
-            logging.debug(type(privkey.save_pkcs1()))
             prifile.write(privkey.save_pkcs1().decode('utf-8'))
 
         return Path(fpath).joinpath('public.pem'), Path(fpath).joinpath('private.pem')
@@ -75,9 +81,8 @@ class Crypt:
             pubkey = rsa.PublicKey.load_pkcs1(publicfile.read().encode('utf-8'))
             crypto = rsa.encrypt(data.encode('utf-8'), pubkey)
             encrypted = base64.b64encode(crypto).decode('utf-8')
-            logging.debug('cry: %s', crypto)  # bytes
-            logging.debug('cry_base64: %s', base64.b64encode(crypto))  # bytes
-            logging.debug('data_encrypted: %s', base64.b64encode(crypto).decode('utf-8'))  # str
+            log.debug('cry: %s', crypto)  # bytes
+            log.debug('data_encrypted: %s', base64.b64encode(crypto).decode('utf-8'))  # str
 
         return encrypted if not savefile else self.__save_to_file(savefile, encrypted)
 
@@ -91,11 +96,10 @@ class Crypt:
             crypto_tra = base64.b64decode(data.encode('utf-8'))
             privkey = rsa.PrivateKey.load_pkcs1(privatefile.read().encode('utf-8'))
             plaintext = rsa.decrypt(crypto_tra, privkey).decode('utf-8')
-            logging.debug('data_undecrypted: %s', data)  # str
-            logging.debug('cry_utf8:  %s', data.encode('utf-8'))  # bytes
-            logging.debug('cry_utf8_base64:  %s', crypto_tra)  # bytes
+            log.debug('data_undecrypted: %s', data)  # str
+            log.debug('cry_utf8_base64:  %s', crypto_tra)  # bytes
 
-        logging.debug('data_decrypted: %s', plaintext)
+        log.debug('data_decrypted: %s', plaintext)
         return plaintext if not savefile else self.__save_to_file(savefile, plaintext)
 
     @staticmethod
@@ -116,15 +120,10 @@ class Crypt:
         return Path(fpath)
 
 
-crypter = Crypt()
-
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
+    # init
+    gitignorer = Ignorer()
+    crypter = Crypt(gitignorer=gitignorer)
 
     pubkeyfile, prikeyfile = crypter.check_rsa_keys()
 
@@ -133,24 +132,21 @@ if __name__ == '__main__':
     with open(datafile, 'a+') as test_file:
         test_file.seek(0, 0)  # back to the start
         f = test_file.read()
-        logging.debug(f)
+        log.debug("content in file: {}".format(f))
         if f == '':
-            logging.info('测试文件为空')
+            log.info('测试文件为空')
             test_file.write('abc123456789')
 
     # testing 1
     with open(datafile, encoding="utf-8") as df:
         data = df.read()
     text_encrypted = crypter.encrypt(data)
-    logging.info(text_encrypted)
+    log.info("text_encrypted: {}".format(text_encrypted))
     text_decryed = crypter.decrypt(text_encrypted, cwdPath.joinpath('res\\dev\\rsa_decryed.txt'))
-    logging.info(text_decryed)
+    log.info("text_decryed: {}".format(text_decryed))
 
     # testing 2
     text_encrypted = crypter.encrypt(datafile, cwdPath.joinpath('res\\dev\\rsa_encrypted.txt'))
-    logging.info(text_encrypted)
+    log.info("text_encrypted: {}".format(text_encrypted))
     text_decryed = crypter.decrypt(text_encrypted)
-    logging.info(text_decryed)
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
+    log.info("text_decryed: {}".format(text_decryed))

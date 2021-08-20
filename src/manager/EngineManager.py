@@ -3,46 +3,46 @@
 '''
 @File    :   EngineManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/06
-@Version :   1.5.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
 from pathlib import Path
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import text
-sys.path.append(str(Path(__file__).parents[2]))
-
-from src.manager.ConnUI import FileManager  # noqa: E402
-from src.manager.ConnUI import ConnUI  # noqa: E402
+from src.manager.ConnManager import ConnManager  # noqa: E402
+from src.manager.ConnManager import ConnManagerUI  # noqa: E402
 
 
 class EngineManager(object):
-    def __init__(self, conn_ui=False):
+    def __init__(self, cmgr_ui: ConnManagerUI(ConnManager) = None):
         self._engine_dict = {}
-        if conn_ui:
-            # use the inputed CUI
-            self.CUI = conn_ui
-        else:
-            self.CUI = ConnUI(FileManager(file_encrypt=True))
+        self.cmgr_ui = cmgr_ui if cmgr_ui else ConnManagerUI(ConnManager())
 
-    def run_CUI(self, inputed_code='', conn_name=''):
-        self.CUI.run()
+        log.debug('EngineManager inited')
 
-    def read_conn_list(self):
-        conn_list = [name for name, path in self.CUI.fmgr.read_conf()['conn'].items()]
-        logging.info(
-            'Existed connections: %s', '"' + '",  "'.join(conn_list) + '"')
+    def run_cmgr_ui(self, inputed_code='', conn_name=''):
+        self.cmgr_ui.run()
 
-    def test_engine(self, engine):
+    def read_conn_list(self) -> None:
+        print('Existed connections: {}'.format(
+            '"' + '",  "'.join([name for name in self.cmgr_ui.fmgr.read_conf()['conn'].keys()]) + '"'))
+
+    def test_engine(self, engine, type='set'):
         # engine test
         with engine.connect() as conn:
             result = conn.execute(text("select 'Testing engine.'"))
             if result.scalar():
-                logging.info('Connect succeed.')
+                if type == 'set':
+                    log.info('Connect succeed.')
                 return True
             else:
                 return False
@@ -54,9 +54,9 @@ class EngineManager(object):
         while not self._engine_dict[conn_name] and try_time <= try_max:
             try:
                 if failed:
-                    logging.info('Login failed.')
+                    log.error('Login failed.')
                 try_time += 1
-                conf_dict = self.CUI.run('READ', conn_name)
+                conf_dict = self.cmgr_ui.run('READ', conn_name)
                 if conf_dict:
                     if 'pyodbc' in conf_dict['sqlalchemy.url']:
                         # depend your native version
@@ -64,45 +64,54 @@ class EngineManager(object):
 
                     # add kwargs to conf_dict
                     if kwargs:
-                        logging.info("engine additional kwargs: %s", kwargs)
+                        log.info("engine additional kwargs: %s", kwargs)
                         for key, value in kwargs.items():
                             conf_dict['sqlalchemy.' + key] = value
-                    logging.debug("conf_dict with kwargs: %s", conf_dict)
+                    log.debug("conf_dict with kwargs: %s", conf_dict)
                     self._engine_dict[conn_name] = engine_from_config(conf_dict, prefix='sqlalchemy.')
                     self.test_engine(self._engine_dict[conn_name])
                 failed = True
             except Exception as e:
-                logging.debug("An error occurred. {!r}".format(e.args[-1]))
+                log.error("An error occurred. {!r}".format(e.args[-1]))
             finally:
                 if try_time > try_max:
-                    logging.error('Login failed too much time. Stop trying.')
+                    log.error('Login failed too much time. Stop trying.')
 
     def get_engine(self, conn_name):
         if self._engine_dict.get(conn_name):
-            if self.test_engine(self._engine_dict[conn_name]):
+            if self.test_engine(self._engine_dict[conn_name], 'get'):
                 return self._engine_dict[conn_name]
             else:
-                logging.warning(
+                log.warning(
                     "The engine[{0}] connect failed. Drop it.".format(conn_name))
                 self._engine_dict.pop(conn_name)
         else:
-            logging.warning("The engine[{0}] is not found.".format(conn_name))
+            log.warning("The engine[{0}] is not found.".format(conn_name))
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
+    # diff ways to init a instance of EngineManager
+    if False:
+        # customize from Ignorer and Crypt
+        from src.manager.Ignorer import Ignorer  # noqa: E402
+        from src.manager.Crypt import Crypt  # noqa: E402
+        gitignorer = Ignorer()
+        crypter = Crypt(gitignorer=gitignorer)
+        cmgr = ConnManager(crypter=crypter, gitignorer=gitignorer)
+        cmgr_ui = ConnManagerUI(conn_manager=cmgr)
+        manager = EngineManager(cmgr_ui=cmgr_ui)
 
-    manager = EngineManager()
+    if False:
+        # customize from ConnManager and ConnManagerUI
+        cmgr = ConnManager()
+        cmgr_ui = ConnManagerUI(conn_manager=cmgr)
+        manager = EngineManager(cmgr_ui=cmgr_ui)
+
+    if True:
+        # no custom
+        manager = EngineManager()
     manager.read_conn_list()
     manager.set_engine('164', future=True)
     engine_164 = manager.get_engine('164')
     # print(manager._engine_dict)
-    # manager.run_CUI()
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
+    # manager.run_cmgr_ui()

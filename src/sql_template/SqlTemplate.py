@@ -3,18 +3,20 @@
 '''
 @File    :   ErrorWordTemplate.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/18
-@Version :   1.0.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[2]))
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
 
-from src.manager.ConfManager import conf  # noqa: E402
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
+
+from src.manager.main import conf  # noqa: E402
 from src.basic.sql_func import sql_read  # noqa: E402
 
 
@@ -41,7 +43,7 @@ class SqlTemplate:
                 raise ValueError('{} is not a vaild filepath.'.format(fpath))
             else:
                 self.sql_temp = sql_read(fpath)
-                logging.debug("self.sql_temp: {!r}".format(self.sql_temp))
+                log.debug("self.sql_temp: {!r}".format(self.sql_temp))
                 return self.sql_temp
 
     def save_sql(self, sql_fname: str):
@@ -61,15 +63,6 @@ class SqlTemplate:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
-        # filemode='a',
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     sql_temp = SqlTemplate()
     sql_temp.sql_folder = sql_temp.sql_folder.joinpath('error_word')
     print(sql_temp.sql_folder)
@@ -78,6 +71,3 @@ if __name__ == '__main__':
     print(sql_temp.sql_temp)
     sql_temp.create_sql()
     sql_temp.save_sql('save_test.sql')
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
