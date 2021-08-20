@@ -13,3 +13,6 @@
 !template.*
 !logging.yaml
 !template_post.py
+!_cwd_.py
+/rsa/
+D:\pycharm\py_sql_client\conf\conn

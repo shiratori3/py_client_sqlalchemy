@@ -3,16 +3,18 @@
 '''
 @File    :   pool_change.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/18
-@Version :   1.6.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[2]))
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
+
+from src.manager.Logger import logger  # noqa: E402
+log = logger.get_logger(__name__)
 
 from src.post.RequestParams import RequestParams  # noqa: E402
 
@@ -26,23 +28,16 @@ def pool_change(request_params: RequestParams, payload_conf: str, url_type: str 
     )
     if response and isinstance(response, dict):
         if url_type == 'urlChange':
-            logging.info("%s request执行成功", task_type)
+            log.info("%s request执行成功", task_type)
         else:
             if task_type:
                 task_type = task_type + '_'
-            logging.info(task_type + "总量: %s", response['data']['count'])
-            logging.info(task_type + "涉及公告数: %s", response['data']['influenceItemCount'])
-            logging.info(task_type + "涉及科目数: %s", response['data']['influenceSubjectCount'])
+            log.info(task_type + "总量: %s", response['data']['count'])
+            log.info(task_type + "涉及公告数: %s", response['data']['influenceItemCount'])
+            log.info(task_type + "涉及科目数: %s", response['data']['influenceSubjectCount'])
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     request_params = RequestParams()
     request_params.read_conf('settings.yaml')
 
@@ -56,6 +51,3 @@ if __name__ == '__main__':
     #     payload_conf='poolchange_juno_error_inner.yaml',
     #     url_type='urlChange', task_type='内部专项校验错误-全量'
     # )
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')

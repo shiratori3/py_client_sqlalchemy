@@ -1,32 +1,28 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   BaseManager.py
+@File    :   BaseFileManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/05
-@Version :   1.5.0
+@Time    :   2021/08/20
 @Desc    :   None
 '''
 
 
 import sys
-import logging
-import yaml
 from pathlib import Path
-sys.path.append(str(Path(__file__).parents[2]))
-logging.basicConfig(
-    level=logging.INFO,
-    # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
-    # filemode='a',
-    format='%(asctime)s %(name)s %(levelname)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
+cwdPath = Path(__file__).parents[2]
+sys.path.append(str(cwdPath))
 
+import logging
+log = logging.getLogger(__name__)
+
+import yaml
 from src.basic.input_check import input_checking_list  # noqa: E402
 
 
-class BaseFileManager(object):
-    # manage the operation on conf_file
-    def __init__(self, conf_path=Path(__file__).parents[2].joinpath('conf'), conf_filename='settings.yaml'):
+class BaseFileManager:
+    """manage the operation on conf_file"""
+    def __init__(self, conf_path: Path = cwdPath.joinpath('conf'), conf_filename: str = 'settings.yaml'):
         self._conf_path = Path(conf_path)
         self._conf_filename = conf_filename
         self._conf_file = Path(self._conf_path).joinpath(self._conf_filename)
@@ -45,20 +41,19 @@ class BaseFileManager(object):
         # Update according to conf_dict
         self._write_conf()
 
-    def _check_path(self, uncheck_path) -> Path:
+        log.debug('BaseFileManager inited')
+
+    def _check_path(self, uncheck_path: Path) -> Path:
         checked_path = uncheck_path
         # check inputed path and is_dir() and exists()
-        logging.debug("conf_path before checked: %s", checked_path)
+        log.debug("conf_path before checked: %s", checked_path)
         if checked_path == Path('') or str(checked_path) == '.':
             checked_path = self._cwd
-            logging.warning('Blank inputed path. Using the default path[{0}]'.format(self._cwd))
-        if not Path(checked_path).is_dir():
-            checked_path = self._cwd
-            logging.warning('Unvaild inputed path. Using the default path[{0}]'.format(self._cwd))
+            log.debug('Blank inputed path. Using the default path[{0}]'.format(self._cwd))
         if not Path(checked_path).exists():
             Path(checked_path).mkdir(parents=True)
-            logging.info("The path[{0}] not existed. Creating.".format(checked_path))
-        logging.debug("conf_path after checked: %s", checked_path)
+            log.warning("The path[{0}] not existed. Creating.".format(checked_path))
+        log.debug("conf_path after checked: %s", checked_path)
         return Path(checked_path)
 
     def _check_conffile(self) -> None:
@@ -72,26 +67,26 @@ class BaseFileManager(object):
             # still missing
             if not self.conf_dict.get('path'):
                 self.conf_dict['path'] = {}
-                logging.info('The configuration missing the session[part]')
-                logging.info('Adding with the blank value')
+                log.info('The configuration missing the session[part]')
+                log.info('Adding with the blank value')
             self.conf_dict['path']['confpath'] = str(self._conf_path)
         else:
             # read conf_dict and check the path in conf_dict
             self.conf_dict = self.read_conf()
             if not self.conf_dict.get('path'):
                 self.conf_dict['path'] = {}
-                logging.info('The configuration missing the session[part]')
-                logging.info('Adding with the blank value')
+                log.info('The configuration missing the session[part]')
+                log.info('Adding with the blank value')
             for key, value in self._default_path['path'].items():
                 if not self.conf_dict['path'].get(key):
                     self.conf_dict['path'][key] = value
-                    logging.info('The configuration missing the part[{0}]'.format(key))
-                    logging.info('Adding with the default value[{0}]'.format(value))
+                    log.info('The configuration missing the part[{0}]'.format(key))
+                    log.info('Adding with the default value[{0}]'.format(value))
                 else:
                     if key == 'confpath':
                         if self._conf_path == Path('') or str(self._conf_path) == '.':
                             self._conf_path = self._cwd
-                            logging.warning('Blank inputed path. Using the default path[{0}]'.format(self._conf_path))
+                            log.debug('Blank inputed path. Using the default path[{0}]'.format(self._conf_path))
                         if Path(self.conf_dict['path']['confpath']) != Path(self._conf_path):
                             self.conf_dict['path']['confpath'] = str(Path(self._conf_path))
 
@@ -104,8 +99,8 @@ class BaseFileManager(object):
         self.conf_dict = converted if converted else {}
         return self.conf_dict
 
-    def run(self, inputed_code, operated_object) -> dict or None:
-        """operation flow according to inputed_code pass by BaseManagerUI.
+    def run(self, inputed_code: str, operated_object: str) -> dict or None:
+        """operation flow according to inputed_code pass by BaseFileManagerUI.
 
         Args:
             inputed_code: str
@@ -133,13 +128,24 @@ class BaseFileManager(object):
             pass
 
     @staticmethod
-    def read_conf_from_file(filepath: Path) -> dict or list:
+    def get_cwdPath(to_str=False) -> Path or str:
+        "return Path(BaseFileManager.py).parents[2] as cwdPath"
+        return cwdPath if not to_str else cwdPath.resolve()
+
+    @staticmethod
+    def read_conf_from_file(filepath: Path, encoding: str = '') -> dict or list:
+        """read config from file"""
         if Path(filepath).exists() and Path(filepath).is_file():
-            with open(str(filepath)) as configfile:
-                data = yaml.load(configfile, Loader=yaml.Loader)
-            return data
+            if encoding:
+                with open(str(filepath), encoding=encoding) as configfile:
+                    data = yaml.load(configfile, Loader=yaml.Loader)
+                return data
+            else:
+                with open(str(filepath)) as configfile:
+                    data = yaml.load(configfile, Loader=yaml.Loader)
+                return data
         else:
-            logging.info('Error. Invaild filepath to read conf.')
+            log.error('Error. Invaild filepath[{}] to read conf.'.format(filepath))
             return {}
 
     @property
@@ -147,11 +153,11 @@ class BaseFileManager(object):
         return self._conf_path
 
     @conf_path.setter
-    def conf_path(self, new_path):
+    def conf_path(self, new_path: Path or str):
         old_path = self._conf_path
         self._conf_path = self._check_path(new_path)
         if str(old_path) != str(self._conf_path):
-            logging.info("""The default path of conffile changed.
+            log.info("""The default path of conffile changed.
             From old_path: {0}
             to new_path: {1}""".format(str(old_path), str(self._conf_path)))
 
@@ -165,13 +171,13 @@ class BaseFileManager(object):
         return self._conf_filename
 
     @conf_filename.setter
-    def conf_filename(self, new_name):
+    def conf_filename(self, new_name: str):
         if not isinstance(new_name, str):
             raise TypeError('Expected a string')
         old_name = self._conf_filename
         self._conf_filename = str(new_name)
         if str(old_name) != str(self._conf_filename):
-            logging.info("""The filename of conffile changed.
+            log.info("""The filename of conffile changed.
             From old_name: {0}
             to new_name: {1}""".format(str(old_name), str(new_name)))
 
@@ -181,17 +187,19 @@ class BaseFileManager(object):
             self._write_conf()
 
 
-class BaseManagerUI(object):
+class BaseFileManagerUI:
     # manage the operation between user input and conf_file
-    def __init__(self, file_manager):
+    def __init__(self, file_manager: BaseFileManager):
         self._support_code = ['READ', 'UPDATE', 'DELETE', 'RENAME', 'ADD', 'CLEAR']
         self._handling_code = ''  # the code that present the running status
         self.fmgr = file_manager
 
+        log.debug('BaseFileManagerUI inited')
+
     def _check_handle(self, inputed_code) -> None:
         """check inputed code in _upport_code or not, if not, reinput until True."""
         if inputed_code.upper() not in self._support_code:
-            logging.error('Invaild code inputed.')
+            log.error('Invaild code[{}] inputed.'.format(inputed_code))
             self._handling_code = input_checking_list(
                 self._support_code, 'Please choose your operation.')
         else:
@@ -235,32 +243,32 @@ class BaseManagerUI(object):
             self._code_add(operated_object)
         elif self._handling_code == 'CLEAR':
             self._code_clear()
-        logging.info('ManagaerUI run over.')
+        log.info('ManagaerUI run over.')
 
     def _code_read(self, operated_object) -> dict:
         # rewrite this function according to your program
-        logging.info('Object[%s] readed.' % operated_object)
+        log.info('Object[{}] readed.'.format(operated_object))
         return self.fmgr.run('READ', operated_object)
 
     def _code_update(self, operated_object) -> None:
         # rewrite this function according to your program
         self.fmgr.run('UPDATE', operated_object)
-        logging.info('Object[%s] updated.' % operated_object)
+        log.info('Object[{}] updated.'.format(operated_object))
 
     def _code_rename(self, operated_object) -> None:
         # rewrite this function according to your program
         self.fmgr.run('RENAME', operated_object)
-        logging.info('Object[%s] renamed.' % operated_object)
+        log.info('Object[{}] renamed.'.format(operated_object))
 
     def _code_delete(self, operated_object) -> None:
         # rewrite this function according to your program
         self.fmgr.run('DELETE', operated_object)
-        logging.info('Object[%s] deleted.' % operated_object)
+        log.info('Object[{}] deleted.'.format(operated_object))
 
     def _code_add(self, operated_object) -> None:
         # rewrite this function according to your program
         self.fmgr.run('ADD', operated_object)
-        logging.info('Object[%s] added.' % operated_object)
+        log.info('Object[{}] added.' .format(operated_object))
 
     def _code_clear(self) -> None:
         # rewrite this function according to your program
@@ -280,18 +288,6 @@ class BaseManagerUI(object):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(
-        level=logging.INFO,
-        # filename=os.path.basename(__file__) + '_' + time.strftime('%Y%m%d', time.localtime()) + '.log',
-        # filemode='a',
-        format='%(asctime)s %(name)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S')
-    logging.debug('start DEBUG')
-    logging.debug('==========================================================')
-
     file_manager = BaseFileManager()
-    manager = BaseManagerUI(file_manager)
+    manager = BaseFileManagerUI(file_manager)
     manager.run()
-
-    logging.debug('==========================================================')
-    logging.debug('end DEBUG')
