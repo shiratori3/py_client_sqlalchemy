@@ -57,6 +57,9 @@ class Logger:
             else:
                 self.log.debug('get_logger name[{}] not in logger_list'.format(name))
                 return logging.getLogger()
+        else:
+            self.log.debug('logger_list not exists'.format())
+            return logging.getLogger()
 
 
 logger = Logger()
