@@ -20,7 +20,17 @@ from src.basic.dataframe_func import records_to_df  # noqa: E402
 from src.post.RequestParams import RequestParams  # noqa: E402
 
 
-def post_for_records_list(request_params: RequestParams, payload_conf: str, max_page=10):
+def post_for_records_list(request_params: RequestParams, payload_conf: str, max_page: int = 10):
+    """post to get responses and combine multi records into a records_list
+
+    Args:
+        request_params: RequestParams
+            a RequestParams instance
+        payload_conf: str
+            the name of payload_conf_fname to read from RequestParams
+        max_page: int, default 10
+            the maximum page num to get responses
+    """
     response_dict = request_params.send_request(
         "POST", url=request_params.read_url('url'),
         payload_from_conf=payload_conf
@@ -37,6 +47,7 @@ def post_for_records_list(request_params: RequestParams, payload_conf: str, max_
                 looptime = max_page
             log.info("looptime: %s", looptime)
             for i in range(1, looptime):
+                # update page param in payload
                 request_params.update_payload_page(payload_conf, step=1)
                 response_dict_looped = request_params.send_request(
                     "POST",
@@ -50,8 +61,36 @@ def post_for_records_list(request_params: RequestParams, payload_conf: str, max_
 
 
 def post_to_excel(
-        request_params: RequestParams, payload_conf: str, excel_fpath, excel_fname, col_list,
-        max_page=10, not_in_dict={}, day_range=[], sample_num=False):
+        request_params: RequestParams, payload_conf: str,
+        excel_fpath: str, excel_fname: str, col_list: list,
+        day_range: list = [], max_page: int = 10, not_in_dict: dict = {},
+        sample_num: bool = False):
+    """post to get responses and output the result to a excel file
+
+    Args:
+        request_params: RequestParams
+            a RequestParams instance
+        payload_conf: str
+            the name of payload_conf_fname to read from RequestParams
+        excel_fpath: str
+            the directory of output excel file
+        excel_fname: str
+            the filename of output excel file
+        col_list: List[str]
+            a list of colname to filter the converted dataframe
+        day_range: list, default []
+            a list of two datetime str to pass to request_params.read_payload
+
+            For example, ["2021-08-22T00:00:00.000Z", "2021-08-23T00:00:00.000Z"]
+        max_page: int, default 10
+            the maximum page num to get responses
+        not_in_dict: dict, default {}
+            a dicf to exclude some values from the converted dataframe
+
+            For example, {'id': ['1111']} will exclude the value '1111' in col named 'id'
+        sample_num: int, default 0
+            return a sample dataframe with sample_num rows as the final result
+    """
     request_params.read_payload(payload_conf, show_payload=False, day_range=day_range)
 
     # get records_list
@@ -61,7 +100,7 @@ def post_to_excel(
     if records_list:
         records_df = records_to_df(
             records_list,
-            col_list,
+            col_list_request=col_list,
             to_file=excel_fpath + excel_fname,
             not_in_dict=not_in_dict,
             sample_num=sample_num

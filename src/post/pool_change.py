@@ -20,6 +20,18 @@ from src.post.RequestParams import RequestParams  # noqa: E402
 
 
 def pool_change(request_params: RequestParams, payload_conf: str, url_type: str = 'urlChange', task_type: str = ''):
+    """post to change the pool
+
+    Args:
+        request_params: RequestParams
+            a RequestParams instance
+        payload_conf: str
+            the name of payload_conf_fname to read from RequestParams
+        url_type: str, default 'urlChange'
+            the url_type to read from RequestParams
+        task_type: str, default ''
+            a str that describe the pool change action
+    """
     request_params.read_payload(payload_conf, show_payload=False, no_page=True)
     response = request_params.send_request(
         'POST',

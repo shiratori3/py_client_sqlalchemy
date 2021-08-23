@@ -19,26 +19,51 @@ log = logger.get_logger(__name__)
 import pandas as pd
 from sqlalchemy import text
 from sqlalchemy import bindparam
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql.elements import TextClause
 from src.basic.dataframe_func import df_to_file
 
 
-def sql_read(script_file, encoding='utf8'):
+def sql_read(script_file: Path or str, encoding='utf8'):
+    """read .sql file from script_file"""
     try:
         sql = ''
-        with open(str(script_file), encoding=encoding) as f:
+        with open(script_file, encoding=encoding) as f:
             for line in f.readlines():
                 sql = sql + line
-        log.debug('plaintext: %s', sql)
+        log.debug('plaintext in sql: %s', sql)
         return sql
     except Exception as e:
-        log.debug("An error occurred. {}".format(e.args[-1]))
+        log.error("An error occurred. {}".format(e.args[-1]))
 
 
 def sql_query(
-        engine, sql, sql_db_switch='',
-        bindparams={}, commit_after=False,
-        fetchall=True, return_df=True, to_file='', excel_str_num=True):
+        engine: Engine, sql: str, sql_db_switch: str = '',
+        bindparams: dict = {}, commit_after: bool = False,
+        fetchall: bool = True, return_df: bool = True,
+        to_file: str or Path = '', excel_str_num: bool = True):
+    """execute a sql query to engine
+
+    Args:
+        engine: sqlalchemy.engine.Engine
+            a instance of sqlalchemy.engine.Engine
+        sql: str
+            the sql script to query
+        sql_db_switch: str, default ''
+            a simple sql script to swtich using db, such as 'USE information_schema' for MySQL
+        bindparams: dict, default {}
+            a dict of params for binding to sql
+        commit_after: bool, default False
+            whether to commit after execute
+        fetchall: bool, default True
+            whether to fetchall, if false, return fetchone
+        return_df: bool, default True
+            return original row or dataframe
+        to_file: str or Path, default ''
+            convert the result to dataframe and save to file
+        excel_str_num: bool, default True
+            define the num type in output file, work only in excel file
+    """
     try:
         with engine.connect() as conn:
             if sql_db_switch:
@@ -79,7 +104,7 @@ def sql_query(
 
                 return df if return_df else row
     except Exception as e:
-        log.debug("An error occurred. {}".format(e.args[-1]))
+        log.error("An error occurred. {}".format(e.args[-1]))
         if 'conn' in dir():
             conn.close()
 

@@ -3,7 +3,7 @@
 '''
 @File    :   compare.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/08/22
 @Desc    :   None
 '''
 
@@ -18,12 +18,12 @@ log = logger.get_logger(__name__)
 
 import copy
 from collections.abc import Mapping
-from src.basic.input_check import input_checking_YN  # noqa: E402
+from src.basic.input_check import input_checking_YN
 
 
 def dict_compare(
         dict_uncheck: dict, dict_refer: dict,
-        dict_checked: dict = {}, suffix: str = '[]', lv: int = 0, diff_autoadd=True):
+        dict_checked: dict = {}, suffix: str = '[]', lv: int = 0, diff_autoadd=True) -> dict:
     """Compare two dict and merge the missing part."""
     if not dict_checked:
         log.debug('dict_checked init')

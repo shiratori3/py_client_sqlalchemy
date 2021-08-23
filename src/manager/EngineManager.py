@@ -18,26 +18,52 @@ log = logger.get_logger(__name__)
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import text
+from sqlalchemy.engine import Engine
 from src.manager.ConnManager import ConnManager  # noqa: E402
 from src.manager.ConnManager import ConnManagerUI  # noqa: E402
 
 
 class EngineManager(object):
+    """manage the sqlalchemy.engine which connect to database
+
+    Attrs:
+        cmgr_ui: ConnManagerUI(ConnManager), default None
+            a instance of ConnManagerUI, if none, create a new one by default
+        _engine_dict: dict
+            a dict saving the connected engines
+
+    Methods:
+        run_cmgr_ui(self, inputed_code='', conn_name='') -> dict or None:
+            call the ConnManagerUI.run()
+        read_conn_list(self) -> None:
+            read the list of conn in conn_info.yaml and print it
+        test_engine(self, engine: Engine, type: str = 'set') -> bool:
+            test the engine whether connect succeed
+        set_engine(self, conn_name: str, try_max: int = 3, **kwargs) -> None:
+            read from the conf and connect to database, if success, save to self._engine_dict
+        get_engine(self, conn_name: str) -> Engine or None:
+            get engine from self._engine_dict
+    """
     def __init__(self, cmgr_ui: ConnManagerUI(ConnManager) = None):
-        self._engine_dict = {}
         self.cmgr_ui = cmgr_ui if cmgr_ui else ConnManagerUI(ConnManager())
+        self._engine_dict = {}
 
         log.debug('EngineManager inited')
 
-    def run_cmgr_ui(self, inputed_code='', conn_name=''):
-        self.cmgr_ui.run()
+    def run_cmgr_ui(self, inputed_code='', conn_name='') -> dict or None:
+        """call the ConnManagerUI.run()"""
+        if inputed_code:
+            return self.cmgr_ui.run(inputed_code=inputed_code, conn_name=conn_name)
+        else:
+            return self.cmgr_ui.run()
 
     def read_conn_list(self) -> None:
+        """read the list of conn in conn_info.yaml and print it"""
         print('Existed connections: {}'.format(
             '"' + '",  "'.join([name for name in self.cmgr_ui.fmgr.read_conf()['conn'].keys()]) + '"'))
 
-    def test_engine(self, engine, type='set'):
-        # engine test
+    def test_engine(self, engine: Engine, type: str = 'set') -> bool:
+        """test the engine whether connect succeed"""
         with engine.connect() as conn:
             result = conn.execute(text("select 'Testing engine.'"))
             if result.scalar():
@@ -47,7 +73,15 @@ class EngineManager(object):
             else:
                 return False
 
-    def set_engine(self, conn_name, try_max=3, **kwargs):
+    def set_engine(self, conn_name: str, try_max: int = 3, **kwargs) -> None:
+        """read from the conf and connect to database, if success, save to self._engine_dict
+
+        Args:
+            conn_name: str
+                the name of connection to read from conn_info.yaml
+            try_max: int
+                the maximum number you can try to connect to a database
+        """
         try_time = 0
         failed = False
         self._engine_dict[conn_name] = ''
@@ -77,7 +111,8 @@ class EngineManager(object):
                 if try_time > try_max:
                     log.error('Login failed too much time. Stop trying.')
 
-    def get_engine(self, conn_name):
+    def get_engine(self, conn_name: str) -> Engine or None:
+        """get engine from self._engine_dict"""
         if self._engine_dict.get(conn_name):
             if self.test_engine(self._engine_dict[conn_name], 'get'):
                 return self._engine_dict[conn_name]

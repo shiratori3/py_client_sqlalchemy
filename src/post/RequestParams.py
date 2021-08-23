@@ -23,15 +23,54 @@ from src.manager.main import conf  # noqa: E402
 
 
 class RequestParams(object):
-    def __init__(self, conf_path=cwdPath.joinpath('conf/post'), ) -> None:
+    """Manage the urls, headers and payloads to create requests
+
+    Attrs:
+        conf_path: Path, default cwdPath.joinpath('conf/post')
+            the directory of conf files
+        conf_fname: str
+            the filename of conf file
+        url_dict: dict
+            conf_dict['url'] readed from conf_path.joinpath(conf_fname)
+        headers: dict
+            conf_dict['headers'] read from conf_path.joinpath(conf_fname)
+            updated with conf_dict['cookie']['gsid'] and conf_dict['cookie']['token']
+        payloads: dict
+            the dict saving converted payload readed from conf_path.joinpath(payload_conf_fname)
+            for example, {payload_conf_fname: _payload_str}
+        payload_curpage_dict: dict
+            the dict saving page param for each payload_conf_fname
+            for example, {payload_conf_fname: cur_page}
+
+    Methods:
+        read_conf(self, conf_fname: str) -> None:
+            read from conf_path.joinpath(conf_fname) and update headers
+        read_url(self, url_type: str, **params) -> str:
+            read url in self.url_dict and format with timestamp
+        read_payload(
+                self, payload_conf_fname: str,
+                show_payload: bool = False, no_page: bool = False, day_range: list = []
+            ) -> None:
+            read payload from conf_path.joinpath(payload_conf_fname) and update params in payload
+        update_payload_page(self, payload_conf_fname: str, step: int = 1):
+            update page param in payload
+        send_request(
+                self, send_type: str, url: str,
+                payload_from_conf: str = '',
+                request_payloads: str = '', request_headers: str = ''
+            ) -> dict or requests.Response:
+            send a request and return response
+    """
+    def __init__(self, conf_path: Path = cwdPath.joinpath('conf/post')):
         self.conf_path = Path(conf_path)
 
         self.url_dict = {}
         self.payload_curpage_dict = {}
-        self.headers = ''
+        self.headers = {}
         self.payloads = {}
 
     def read_conf(self, conf_fname: str) -> None:
+        """read from conf_path.joinpath(conf_fname) and update headers"""
         conf_dict = conf.read_conf_from_file(self.conf_path.joinpath(conf_fname))
         log.debug("conf_dict: %s", conf_dict)
 
@@ -47,13 +86,30 @@ class RequestParams(object):
         self.headers = conf_dict['headers']
 
     def read_url(self, url_type: str, **params) -> str:
+        """read url in self.url_dict and format with timestamp"""
         if self.url_dict.get(url_type):
             return self.url_dict[url_type].format(timestamp=int(round(time.time() * 1000)), **params)
         else:
             log.error("Unvaild url_type. Return blank url.")
             return ''
 
-    def read_payload(self, payload_conf_fname: str, show_payload=False, no_page=False, day_range: list = []) -> None:
+    def read_payload(
+            self, payload_conf_fname: str,
+            show_payload: bool = False, no_page: bool = False, day_range: list = []) -> None:
+        """read payload from conf_path.joinpath(payload_conf_fname) and update params in payload
+
+        Args:
+            payload_conf_fname: str
+                the filename of payload conf to read
+            show_payload: bool, default False
+                show payload readed for debug
+            no_page: bool, default False
+                whether not to add page param in payload
+            day_range: list, default []
+                a list of two datetime str to update the 'lastModifiedDateRange' param in payload
+
+                For example, ["2021-08-22T00:00:00.000Z", "2021-08-23T00:00:00.000Z"]
+        """
         self._payload_conf_dict = conf.read_conf_from_file(self.conf_path.joinpath(payload_conf_fname))
 
         # init
@@ -71,7 +127,29 @@ class RequestParams(object):
         # add to dict of payload
         self.payloads[payload_conf_fname] = self._payload_str
 
-    def send_request(self, send_type: str, url, payload_from_conf: str = '', request_payloads: str = '', request_headers: str = '') -> dict or requests.Response:
+    def send_request(
+            self, send_type: str, url: str,
+            payload_from_conf: str = '',
+            request_payloads: str = '', request_headers: str = '') -> dict or requests.Response:
+        """send a request and return response
+
+        send a request and return response.
+        if response code not equal to 200, output the info of params for debug.
+
+        Args:
+            send_type: str
+                the method to post, must in ['POST', 'GET']
+            url: str
+                the url to send a request and get response
+            payload_from_conf: str, default ''
+                the name of payload_conf_fname to read from RequestParams
+            request_payloads: str, default ''
+            request_headers: str, default ''
+                the payload and header used to create request instead of those in RequestParams
+
+        Returns:
+            a dict of json type or requests.Response if response.json() failed
+        """
         if send_type.upper() not in ['POST', 'GET']:
             raise ValueError('Invaild send_type[{}]. Please input POST or GET.'.format(send_type))
 
@@ -113,6 +191,7 @@ class RequestParams(object):
             return response
 
     def update_payload_page(self, payload_conf_fname: str, step: int = 1):
+        """update page param in payload"""
         log.debug(self.payloads[payload_conf_fname])
         log.debug(self.payload_curpage_dict[payload_conf_fname])
         self.payloads[payload_conf_fname] = self.payloads[payload_conf_fname].replace(
@@ -121,6 +200,7 @@ class RequestParams(object):
         )
 
     def _update_payload_params(self, day_range: list = []) -> None:
+        """update the params in readed payload"""
         if day_range:
             if self._payload_conf_dict['payload'].get('lastModifiedDateRange', None) is not None:
                 log.debug("datetime.datetime.utcnow(): %s", datetime.datetime.utcnow())
@@ -145,12 +225,14 @@ class RequestParams(object):
             else:
                 log.warning('No lastModifiedDateRange in payload. Invaild day_range.')
 
-    def _payload_dict2str(self, payload_conf_fname, no_page=False):
+    def _payload_dict2str(self, payload_conf_fname: str, no_page: bool = False):
+        """convert payload from dict to str for request"""
         log.debug("payload_conf_dict: {0}".format(self._payload_conf_dict))
         payload_param = str(self._payload_conf_dict["payload"]).replace('\'', '"').replace(' ', '').replace('None', 'null').replace('False', 'false').replace('True', 'true')
         if no_page:
             return payload_param
         else:
+            # add page param
             return '{"page":{"current":' + str(self.payload_curpage_dict[payload_conf_fname]) + ',"size":' + str(self.page_size) + "}," + payload_param[1:-1] + "}"
 
 

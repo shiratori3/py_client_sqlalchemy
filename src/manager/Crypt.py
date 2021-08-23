@@ -22,6 +22,28 @@ from src.manager.Ignorer import Ignorer  # noqa: E402
 
 
 class Crypt:
+    """encrypt and decrypt str using rsa algorithm
+
+    Attrs:
+        savepath: Path, default cwdPath.joinpath('conf\\rsa')
+            the directory to save pubkeyfile and prikeyfile if pubkeyfile or prikeyfile unvaild
+        pubkeyfile: Path, default cwdPath.joinpath('conf\\rsa').joinpath('public.pem')
+            the filepath of pubkeyfile
+        prikeyfile: Path, default cwdPath.joinpath('conf\\rsa').joinpath('private.pem')
+            the filepath of prikeyfile
+        gitignorer: Ignorer, default None
+            a instance of Ignorer. If none, create a new one
+
+    Methods:
+        check_rsa_keys(self):
+            check whether self.pubkeyfile and self.prikeyfile is vaild. If unvaild, create new ones under savepath
+        create_rsa_keys(self):
+            create a pair of rsa keys and then save to .pem file under savepath
+        encrypt(self, data: str or bytes, savefile: Path = '', pubkeyfile: Path = ''):
+            encrypt the data and return the encrypted data or write into savefile
+        decrypt(self, data: str or bytes, savefile: Path = '', prikeyfile: Path = ''):
+            decrypt the data and return the decrypted data or write into savefile
+    """
     def __init__(
             self, savepath: Path = cwdPath.joinpath('conf\\rsa'),
             pubkeyfile: Path = cwdPath.joinpath('conf\\rsa').joinpath('public.pem'),
@@ -48,31 +70,41 @@ class Crypt:
         log.debug('Crypt inited')
 
     def check_rsa_keys(self):
+        """check whether self.pubkeyfile and self.prikeyfile is vaild. If unvaild, create new ones under savepath"""
         if not (Path(self.pubkeyfile).exists() and Path(self.prikeyfile).exists()):
             log.warning('Keyfiles unfound. Creating under path[{}].'.format(self.savepath))
 
             if not Path(self.savepath).exists():
                 log.warning('Unvaild savepath. Use the default path[{}].'.format(self.savepath))
-                self.savepath = cwdPath.joinpath('docs\\dev\\rsa')
+                self.savepath = cwdPath.joinpath('conf\\rsa')
                 Path.mkdir(self.savepath, parents=True)
-            self.pubkeyfile, self.prikeyfile = self._create_rsa_keys(self.savepath)
+            self.pubkeyfile, self.prikeyfile = self._create_rsa_keys()
 
         return self.pubkeyfile, self.prikeyfile
 
-    def _create_rsa_keys(self, fpath: Path):
-        # create a pair of keys and then save to .pem file
+    def _create_rsa_keys(self):
+        """create a pair of rsa keys and then save to .pem file under savepath"""
         log.info('Creating RSA keys.')
         (pubkey, privkey) = rsa.newkeys(2048)
 
-        with open(Path(fpath).joinpath('public.pem'), 'w+') as pubfile:
+        with open(self.savepath.joinpath('public.pem'), 'w+') as pubfile:
             pubfile.write(pubkey.save_pkcs1().decode('utf-8'))
-        with open(Path(fpath).joinpath('private.pem'), 'w+') as prifile:
+        with open(self.savepath.joinpath('private.pem'), 'w+') as prifile:
             prifile.write(privkey.save_pkcs1().decode('utf-8'))
 
-        return Path(fpath).joinpath('public.pem'), Path(fpath).joinpath('private.pem')
+        return self.savepath.joinpath('public.pem'), self.savepath.joinpath('private.pem')
 
     def encrypt(self, data: str or bytes, savefile: Path = '', pubkeyfile: Path = ''):
-        """encrypt the data and return the encrypted data or write into savefile"""
+        """encrypt the data and return the encrypted data or write into savefile
+
+        Args:
+            data: str or bytes
+                data to encrypt, can be a filepath
+            savefile: Path, optional, default ''
+                the path to save the encrypted data
+            pubkeyfile: Path,  optional, default ''
+                the path of pubkeyfile. use pubkeyfile instead of self.pubkeyfile to encrypt
+        """
         # if data is a filepath, read the content in file
         data = self.__check_data_type(data) if self.__check_data_type(data) else data
 
@@ -87,14 +119,23 @@ class Crypt:
         return encrypted if not savefile else self.__save_to_file(savefile, encrypted)
 
     def decrypt(self, data: str or bytes, savefile: Path = '', prikeyfile: Path = ''):
-        """decrypt the data and return the decrypted data or write into savefile"""
+        """decrypt the data and return the decrypted data or write into savefile
+
+        Args:
+            data: str or bytes
+                data to decrypt, can be a filepath
+            savefile: Path, optional, default ''
+                the path to save the decrypted data
+            prikeyfile: Path,  optional, default ''
+                the path of prikeyfile. use prikeyfile instead of self.prikeyfile to decrypt
+        """
         # if data is a filepath, read the content in file
         data = self.__check_data_type(data) if self.__check_data_type(data) else data
 
         prikeyfile = self.prikeyfile if not prikeyfile else prikeyfile
         with open(self.prikeyfile) as privatefile:
-            crypto_tra = base64.b64decode(data.encode('utf-8'))
             privkey = rsa.PrivateKey.load_pkcs1(privatefile.read().encode('utf-8'))
+            crypto_tra = base64.b64decode(data.encode('utf-8'))
             plaintext = rsa.decrypt(crypto_tra, privkey).decode('utf-8')
             log.debug('data_undecrypted: %s', data)  # str
             log.debug('cry_utf8_base64:  %s', crypto_tra)  # bytes
@@ -113,6 +154,7 @@ class Crypt:
 
     @staticmethod
     def __save_to_file(fpath: Path, data: str or bytes):
+        """save the data to fpath"""
         if not Path.exists(Path(fpath).parent):
             Path.mkdir(Path(fpath).parent, parents=True)
         with open(Path(fpath), 'w+', encoding="utf-8") as sf:

@@ -3,7 +3,7 @@
 '''
 @File    :   Logger.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/08/22
 @Desc    :   None
 '''
 
@@ -19,6 +19,21 @@ import logging.config
 
 
 class Logger:
+    """An instance of logging.
+
+    Read logging.yaml as a dict to pass by logging.config.dictConfig().
+    If failed, use logging.basicConfig(level=default_lv)
+
+    Attrs:
+        conf: Path, default cwdPath.joinpath('logging.yaml')
+            filepath of logging.yaml
+        default_lv: default logging.INFO
+            output messages level when failed to read logging.yaml
+
+    Methods:
+        get_logger(self, name: str = '') -> logging.getLogger:
+            return a Logger instance named name if name in logger.logger_list
+    """
     def __init__(self, conf: Path = cwdPath.joinpath('logging.yaml'), default_lv=logging.INFO) -> None:
         self.conf_file = conf
         if self.conf_file.exists():
@@ -50,13 +65,17 @@ class Logger:
             self.log.error('logging.yaml not exists in [{}]. Using the default configs.'.format(conf))
         self.log.info('logger inited')
 
-    def get_logger(self, name=''):
+    def get_logger(self, name: str = '') -> logging.getLogger:
+        """return a logger instance named name if name in logger.logger_list"""
         if self.logger_list:
             if name in self.logger_list:
                 return logging.getLogger(name)
             else:
                 self.log.debug('get_logger name[{}] not in logger_list'.format(name))
                 return logging.getLogger()
+        else:
+            self.log.debug('logger_list not exists'.format())
+            return logging.getLogger()
 
 
 logger = Logger()

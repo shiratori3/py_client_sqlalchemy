@@ -20,7 +20,23 @@ import datetime
 from src.post.RequestParams import RequestParams  # noqa: E402
 
 
-def num_count(request_params: RequestParams, payload_dicts: dict, diff_count=False):
+def num_count(request_params: RequestParams, payload_dicts: dict, diff_count: bool = False):
+    """count nums of multi payload_conf
+
+    Args:
+        request_params: RequestParams
+            a RequestParams instance
+        payload_dicts: dict
+            a dict of pairs of payload_conf_fname and url_type to read from RequestParams,
+            format: 'payload_conf_fname': 'url_type'
+
+            For example, {
+                'query_juno_error_unfinished_2021.yaml': 'url',
+                'getsql_juno_error_2021.yaml': 'urlgetSql',
+            }
+        diff_count: bool, default False
+            whether to calculate the diff between payload_confs
+    """
     run_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log.info("Preparing requests at {}.".format(run_time))
 
