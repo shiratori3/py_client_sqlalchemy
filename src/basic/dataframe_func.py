@@ -23,8 +23,26 @@ from typing import List
 
 def records_to_df(
         records_list: List[dict], col_list_request: List[str] = [],
-        to_file: str = '', num_to_str: bool = True,
+        to_file: str = '', excel_str_num: bool = True,
         not_in_dict: dict = {}, sample_num: int = 0):
+    """Convert records from responses to pd.DataFrames
+
+    Args:
+        records_list: List[dict]
+            a list of records to convert
+        col_list_request: List[str], default []
+            a list of colname to filter the converted dataframe
+        to_file: str, optional, default ''
+            the filepath of output file, can be .csv or .xlsx
+        excel_str_num: bool, default True
+            define the num type in output file, work only in excel file
+        not_in_dict: dict, default {}
+            a dicf to exclude some values from the converted dataframe
+
+            For example, {'id': ['1111']} will exclude the value '1111' in col named 'id'
+        sample_num: int, default 0
+            return a sample dataframe with sample_num rows as the final result
+    """
     log.info("len(records_list): %s", len(records_list))
 
     df_full = pd.DataFrame.from_records(records_list)
@@ -41,11 +59,21 @@ def records_to_df(
     log.info("len(df_filtered_sampled): %s", len(df_filtered_sampled))
 
     if to_file:
-        df_to_file(df_filtered_sampled, to_file, num_to_str)
+        df_to_file(df_filtered_sampled, to_file, excel_str_num)
     return df_filtered
 
 
-def df_to_file(df, to_file, num_to_str=True):
+def df_to_file(df: pd.DataFrame, to_file: str, excel_str_num: bool = True):
+    """output df to a file
+
+    Args:
+        df: pd.DataFrame
+            the dataframe to convert
+        to_file: str
+            the filepath of output file
+        excel_str_num: bool, default True
+            define the num type in output file, work only in excel file
+    """
     if not isinstance(df, pd.DataFrame):
         log.debug('type(df): %s', type(df))
         log.error('The type of data inputed is not dataframe')
@@ -65,11 +93,13 @@ def df_to_file(df, to_file, num_to_str=True):
                         pe.save_as(
                             file_name=to_csvfile, dest_file_name=to_file,
                             encoding='utf_8_sig',
-                            auto_detect_int=bool(1 - num_to_str),
-                            auto_detect_float=bool(1 - num_to_str)
+                            auto_detect_int=bool(1 - excel_str_num),
+                            auto_detect_float=bool(1 - excel_str_num)
                         )
                         if Path(to_file).exists() and Path(to_csvfile).exists():
                             Path(to_csvfile).unlink()
+                else:
+                    log.error('Invaild filename[{}].'.format(to_file))
 
 
 if __name__ == '__main__':

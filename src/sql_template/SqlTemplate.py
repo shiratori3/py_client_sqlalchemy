@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   ErrorWordTemplate.py
+@File    :   SqlTemplate.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/08/22
 @Desc    :   None
 '''
 
@@ -16,15 +16,34 @@ sys.path.append(str(cwdPath))
 from src.manager.Logger import logger  # noqa: E402
 log = logger.get_logger(__name__)
 
-from src.manager.main import conf  # noqa: E402
 from src.basic.sql_func import sql_read  # noqa: E402
 
 
 class SqlTemplate:
+    """Create sql script from sql_template script
+
+    Attrs:
+        temp_folder: Path, default cwdPath.joinpath('res\\dev\\sql_template')
+            the directory save the sql_template script
+        sql_folder: Path, default cwdPath.joinpath('res\\dev\\sqlscript')
+            the directory to save the sql script created from sql_template script
+        sql_temp: str
+            sql_template script readed from read_template(temp_fname)
+        sql_result: str
+            sql script created by create_sql() from sql_template script
+
+    Methods:
+        read_template(self, temp_fname):
+            read sql_temp from Path(self.temp_folder).joinpath(temp_fname)
+        save_sql(self, sql_fname: str):
+            save sql_result to Path(self.sql_folder).joinpath(sql_fname)
+        create_sql(self):
+            create sql_result from sql_temp
+    """
     def __init__(
             self,
-            temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\dev\\sql_template'),
-            sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\dev\\sqlscript')
+            temp_folder: Path = cwdPath.joinpath('res\\dev\\sql_template'),
+            sql_folder: Path = cwdPath.joinpath('res\\dev\\sqlscript')
     ) -> None:
         self.temp_folder = Path(temp_folder)
         self.sql_folder = Path(sql_folder)
@@ -34,7 +53,8 @@ class SqlTemplate:
             self.sql_folder.mkdir(parents=True)
         self.sql_result = ''
 
-    def read_template(self, temp_fname):
+    def read_template(self, temp_fname: str):
+        """read sql_temp from Path(self.temp_folder).joinpath(temp_fname)"""
         if not Path(self.temp_folder).exists():
             raise ValueError('{} is not a vaild filepath.'.format(self.temp_folder))
         else:
@@ -47,6 +67,7 @@ class SqlTemplate:
                 return self.sql_temp
 
     def save_sql(self, sql_fname: str):
+        """save sql_result to Path(self.sql_folder).joinpath(sql_fname)"""
         if not self.sql_result:
             raise ValueError('sql_result is blank')
         else:
@@ -58,7 +79,9 @@ class SqlTemplate:
                     f.write(self.sql_result)
 
     def create_sql(self) -> None:
-        # rewrite this function by yourself
+        """create sql_result from sql_temp
+
+        you should rewrite this method by yourself"""
         self.sql_result = "SELECT 'sql_template'"
 
 

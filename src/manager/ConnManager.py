@@ -29,7 +29,32 @@ from src.manager.BaseFileManager import BaseFileManagerUI  # noqa: E402
 
 
 class ConnManager(BaseFileManager):
-    """manage the operation between conn_info_file and conn_txt_file"""
+    """manage the operation between conn_info_file and conn_txt_file
+
+    Attrs:
+        conf_path: Path, default cwdPath.joinpath('conf\\conn')
+            Directory of configuration file.
+        file_encrypt: bool, default True,
+            whether to encrypt conn_info when save
+        crypter: Crypt, default None
+            a Crypt instance to encrypt and decrypt
+        gitignorer: Ignorer, default None
+            a Ignorer instance to add '/conf/rsa/' or the conf_path to .gitignore
+
+        _support_dialect: List[str]
+        _support_driver: Dict[List[str]]
+            the dialect and driver supported. You can add more if it is in the sqlalchemy engine
+        conf_file: Path
+            Filepath of configuration file
+        conf_dict: Dict[str]
+            Dict readed from conf_file, format: {'conn_name': conn_filepath}
+        _conn_conf: Dict[str]
+            a dict of connection configuration info for sqlalchemy engine
+
+    Methods:
+        run(self, inputed_code: str, conn_name: str) -> dict or None:
+            operation flow according to inputed_code pass by BaseFileManagerUI.
+    """
     def __init__(
             self,
             conf_path: Path = cwdPath.joinpath('conf\\conn'), file_encrypt: bool = True,
@@ -77,7 +102,7 @@ class ConnManager(BaseFileManager):
         log.debug('ConnManager inited')
 
     def _check_conf_dict(self) -> None:
-        """check the conf_dict to keep the file in path and filepath in dict correct"""
+        """check the conf_dict to keep the conn_file in path and filepath in dict correct"""
         self.conf_dict = self.read_conf()
         conn_names = [f.name.replace('.txt', '') for f in list(self._conf_path.glob('*.txt'))]
 
@@ -114,21 +139,21 @@ class ConnManager(BaseFileManager):
         # update conf_dict
         self._write_conf()
 
-    def run(self, inputed_code, conn_name) -> dict or None:
+    def run(self, inputed_code: str, conn_name: str) -> dict or None:
         """operation flow according to inputed_code pass by BaseFileManagerUI.
 
         Args:
             inputed_code: str
+                inputed_code should in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME'].
+
                 the relation between inputed_code and object:
                     need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
                     need non-existing object: 'ADD'
             conn_name: str
 
         Returns:
-            return none or a dict when readed.
+            return a dict when readed, else None.
         """
-        # inputed_code in ['READ', 'ADD', 'UPDATE', 'DELETE', 'RENAME']
-
         self.conf_dict = self.read_conf()
         if inputed_code == 'READ':
             # read the _conn_conf from conn_file
@@ -172,7 +197,7 @@ class ConnManager(BaseFileManager):
         print('FileManager run over.')
 
     def _write_conn_conf(self, conn_name) -> None:
-        # write the _conn_conf to conn_file
+        """write the _conn_conf to self._conf_path.joinpath(conn_name + '.txt')"""
         with open(self._conf_path.joinpath(conn_name + '.txt'), 'w') as file_obj:
             if self._file_encrypt:
                 file_obj.write(self.__crypter.encrypt(json.dumps(self._conn_conf)))
@@ -180,6 +205,7 @@ class ConnManager(BaseFileManager):
                 json.dump(self._conn_conf, file_obj)
 
     def _read_conn_conf(self, conn_name) -> dict:
+        """read the _conn_conf from self.conf_dict['conn'][conn_name]"""
         with open(self.conf_dict['conn'][conn_name]) as file_obj:
             data = file_obj.read() if not self._file_encrypt else self.__crypter.decrypt(file_obj.read())
         log.debug('data: %s', data)
@@ -187,6 +213,7 @@ class ConnManager(BaseFileManager):
         return self._conn_conf
 
     def _create_conn_url(self) -> dict:
+        """create a conf_url to connect to sqlalchemy engine"""
         dialect = input_checking_list(
             self._support_dialect, 'Please choose the database dialect.', case_sens=True)
         driver = input_checking_list(
@@ -216,6 +243,23 @@ class ConnManager(BaseFileManager):
 
 
 class ConnManagerUI(BaseFileManagerUI):
+    """manage the operation between user input code and ConnManager
+
+    Attrs:
+        support_code: List[str], default ['READ', 'UPDATE', 'DELETE', 'RENAME', 'ADD', 'CLEAR']
+            a list of supporting code. Inputed code must in this list.
+        handling_code: str
+            the current of handling inputed code
+        conn_manager: ConnManager, default None
+            A instance of ConnManager
+
+        _conn_list: list
+            the list of connections saved in conf_file
+        _selected_conn: str
+            the connection to operate
+        _default_name: str
+            the default name of new connection
+    """
     def __init__(self, conn_manager: ConnManager = None):
         conn_manager = conn_manager if conn_manager else ConnManager()
         super().__init__(conn_manager)
@@ -227,7 +271,7 @@ class ConnManagerUI(BaseFileManagerUI):
         log.debug('ConnManagerUI inited')
 
     def _check_included(self, conn_name: str = '') -> None:
-        # read conf file of connections and check whether conn_name in conn_list
+        """read conf file of connections and check whether conn_name in conn_list"""
         self.conf_dict = self.fmgr.read_conf()
         self._selected_conn = ''
         if self.conf_dict.get('conn'):
@@ -246,6 +290,7 @@ class ConnManagerUI(BaseFileManagerUI):
 
     def run(self, inputed_code: str = '', conn_name: str = '') -> dict or None:
         """operate according to inputed_code.
+
         Operation flow of each inputed_code like this:
             Read  → Existed     → Readed
                   → Not Existed → Read existed or not → Readed
@@ -263,6 +308,8 @@ class ConnManagerUI(BaseFileManagerUI):
 
         Args:
             inputed_code: str
+                inputed_code must in _support_code.
+
                 the relation between inputed_code and object:
                     need existing object: 'READ', 'UPDATE', 'DELETE', 'RENAME'
                     need non-existing object: 'ADD'
@@ -270,7 +317,7 @@ class ConnManagerUI(BaseFileManagerUI):
             operated_object: str
 
         Returns:
-            return none or a dict when inputed_code is 'READ'.
+            return a dict when readed, else None.
         """
         if not inputed_code:
             inputed_code = input_checking_list(

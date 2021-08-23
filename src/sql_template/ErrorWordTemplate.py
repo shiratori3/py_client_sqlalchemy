@@ -3,7 +3,7 @@
 '''
 @File    :   ErrorWordTemplate.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/08/22
 @Desc    :   None
 '''
 
@@ -16,24 +16,78 @@ sys.path.append(str(cwdPath))
 from src.manager.Logger import logger  # noqa: E402
 log = logger.get_logger(__name__)
 
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 from collections import Counter
-from src.manager.main import conf  # noqa: E402
 from src.sql_template.SqlTemplate import SqlTemplate  # noqa: E402
 
 
 class ErrorWordTemplate(SqlTemplate):
+    """Create error word script from sql_template script
+
+    Attrs:
+        temp_fname: str, default 'error_word_L.sql'
+            the filename of sql_template script
+        temp_folder: Path, default cwdPath.joinpath('res\\dev\\sql_template')
+            the directory save the sql_template script
+        sql_folder: Path, default cwdPath.joinpath('res\\pro\\sqlscript\\error_word')
+            the directory to save the sql script created from sql_template script
+        sql_temp: str
+            sql_template script readed from read_template(temp_fname)
+        sql_result: str
+            sql script created by create_sql() from sql_template script
+
+    Methods:
+        create_sql(
+                self, word_to_check: str,
+                char_pairs: List[str] = [], poi_pairs: List[Tuple[int, int]] = []) -> None:
+            create sql_result from sql_temp error_word_L or error_word_S
+
+    Static:
+        print_word_position(word: str) -> None:
+            print the char position for each char in the word
+    """
     def __init__(
             self,
             temp_fname: str = 'error_word_L.sql',
-            temp_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\pro\\sql_template'),
-            sql_folder: Path = Path(conf.conf_dict['path']['confpath']).joinpath('res\\pro\\sqlscript\\error_word')
+            temp_folder: Path = cwdPath.joinpath('res\\pro\\sql_template'),
+            sql_folder: Path = cwdPath.joinpath('res\\pro\\sqlscript\\error_word')
     ) -> None:
         super().__init__(temp_folder=temp_folder, sql_folder=sql_folder)
         self.temp_fname = temp_fname
 
-    def create_sql(self, word_to_check: str, char_pairs: list = [], poi_pairs: List[tuple] = []):
+    def create_sql(self, word_to_check: str, char_pairs: List[str] = [], poi_pairs: List[Tuple[int, int]] = []) -> None:
+        """create sql_result from sql_temp error_word_L or error_word_S
+
+        Diff length of word_to_check will use diff sql_temp.
+        While the length less than or equal to 6, the sql_temp named error_word_S.sql will be used.
+
+        The main idea to find error words of the word_to_check is find the word like word_to_check but diff
+        in some chars. So, some pairs of char should be chosen to make sure the word and word_to_check is similar,
+        and the other parts can be diff.
+
+        Args:
+            word_to_check: str
+                the word to check for error chars
+            char_pairs: List[str], default []
+                the pairs of chars to match the word.
+
+                A pair of chars should be two char like 'AB', which will create 'A_' and '_B' to match the word_to_check.
+                Diff pairs of chars will be combined and replace the original chars in word, and the reminded chars
+                will be replaced by '_'.
+
+                For example, char_pairs ['AB', 'CD'] for word_to_check 'ABCDEF' will create 'A_C___' and '_BC___'
+                and 'A__D__' and '_B_D__'
+            poi_pairs: List[Tuple[int, int]], optional, default []
+                the position of pairs of chars
+
+                The exact position of pairs of chars. Used when a pair of chars appear more than once in word_to_check,
+                and you want to use the Xth part.
+
+                For example, char_pairs ['AB', 'CD'] for word_to_check 'ABCDAB', while not providing poi_pairs,
+                'A_C___' and '_BC___' and 'A__D__' and '_B_D__' will be created.
+                If added with [(5,6), (3,4)], '__C_A_' and '__C__B' and '___DA_' and '___D_B' will be created.
+        """
         word_len = len(word_to_check)
         if word_len < 2:
             raise ValueError('word_to_check[{}] is too short.'.format(word_to_check))
@@ -147,6 +201,7 @@ class ErrorWordTemplate(SqlTemplate):
 
     @staticmethod
     def print_word_position(word: str) -> None:
+        """print the char position for each char in the word"""
         print('word[{0}] start split'.format(word))
         for poi, char in enumerate(word, 1):
             print('char[{0}] in position: {1}'.format(char, poi))

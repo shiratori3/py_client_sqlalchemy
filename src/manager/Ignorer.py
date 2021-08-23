@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 '''
-@File    :   add_gitignore.py
+@File    :   Ignorer.py
 @Author  :   Billy Zhou
 @Time    :   2021/08/20
 @Desc    :   None
@@ -18,6 +18,16 @@ log = logger.get_logger(__name__)
 
 
 class Ignorer:
+    """manage the ignored paths and files in .gitignore
+
+    Attrs:
+        savepath: Path, default cwdPath
+            the directory to save the .gitignore file
+        ignorefile
+            the filepath of .gitignore
+        ignorelist
+            a list of items in .gitignore
+        """
     def __init__(self, savepath: Path = cwdPath) -> None:
         self.savepath = savepath
         self.ignorefile = savepath.joinpath('.gitignore')
@@ -38,7 +48,8 @@ class Ignorer:
 
         log.debug('Ignorer inited')
 
-    def read_gitignore(self):
+    def read_gitignore(self) -> list:
+        """read the .gitignore file"""
         self.ignorelist = []
         with open(self.ignorefile, encoding='utf-8') as f:
             line = f.readline()
@@ -48,8 +59,8 @@ class Ignorer:
         log.debug("ignorelist: {}".format(self.ignorelist))
         return self.ignorelist
 
-    def add_gitignore(self, ignore_path: Path or str):
-        """don't update ignore_path while update to git"""
+    def add_gitignore(self, ignore_path: Path or str) -> None:
+        """add path or file to .gitignore file"""
         with open(self.ignorefile, 'a+', encoding='utf-8') as f:
             ignored = False
 

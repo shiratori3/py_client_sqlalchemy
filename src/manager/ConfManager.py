@@ -3,7 +3,7 @@
 '''
 @File    :   ConfManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/08/22
 @Desc    :   None
 '''
 
@@ -22,16 +22,25 @@ from src.basic.input_check import input_checking_YN  # noqa: E402
 
 
 class ConfManager(BaseFileManager):
-    # manage the configuration file
-    def __init__(self, conf_path=''):
+    """manage the configuration file settings.yaml under conf_path
+
+    Attrs:
+        conf_path: Path, default 'Path(__file__).parents[2].joinpath('conf')'
+            Directory of configuration file.
+
+    Methods:
+        add_value(self, session='', option='', value='') -> None:
+            Add a new setting to settings.yaml
+    """
+    def __init__(self, conf_path: Path = cwdPath.joinpath('conf')):
         super().__init__(conf_path=conf_path)
 
-        # Add cwd to conf_dict
-        self.conf_dict['path']['cwd'] = self._cwd
+        log.debug('ConfManager inited')
 
         log.debug('ConfManager inited')
 
     def add_value(self, session='', option='', value='') -> None:
+        """Add a new setting to settings.yaml"""
         self.conf_dict = self.read_conf()
         if not (session and option and value):
             session = input_default(
@@ -57,16 +66,13 @@ class ConfManager(BaseFileManager):
 
         self._write_conf()
 
-        # Add cwd to conf_dict
-        self.conf_dict['path']['cwd'] = self._cwd
-
 
 if __name__ == '__main__':
     conf = ConfManager()
-    log.info('cwdPath: %s', conf.conf_dict['path']['cwd'])
+    log.info('conf.read_conf(): %s', conf.read_conf())
+    log.info('conf.get_cwdPath(): %s', conf.get_cwdPath())
+    log.info('conf.conf_dict[''path''][''cwd'']: %s', conf.conf_dict['path']['cwd'])
 
-    log.info(conf.read_conf())
-    log.info(conf.conf_dict)
     conf.add_value('test', 'name', 'amy')
-    log.info(conf.read_conf())
-    log.info(conf.conf_dict)
+    log.info('conf.read_conf(): %s', conf.read_conf())
+    log.info('conf.conf_dict: %s', conf.conf_dict)
