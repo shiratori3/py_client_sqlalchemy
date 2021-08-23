@@ -67,6 +67,7 @@ class Logger:
 
     def get_logger(self, name: str = '') -> logging.getLogger:
         """return a logger instance named name if name in logger.logger_list"""
+
         if self.logger_list:
             if name in self.logger_list:
                 return logging.getLogger(name)
@@ -76,7 +77,6 @@ class Logger:
         else:
             self.log.debug('logger_list not exists'.format())
             return logging.getLogger()
-
 
 logger = Logger()
 

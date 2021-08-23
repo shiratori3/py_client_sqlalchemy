@@ -37,6 +37,8 @@ class ConfManager(BaseFileManager):
 
         log.debug('ConfManager inited')
 
+        log.debug('ConfManager inited')
+
     def add_value(self, session='', option='', value='') -> None:
         """Add a new setting to settings.yaml"""
         self.conf_dict = self.read_conf()
