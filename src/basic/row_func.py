@@ -13,8 +13,8 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr
+log = logmgr.get_logger(__name__)
 
 
 def row_func(row, func, *args, **kwargs):

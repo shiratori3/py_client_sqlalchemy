@@ -13,8 +13,8 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger  # noqa: E402
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr  # noqa: E402
+log = logmgr.get_logger(__name__)
 
 from src.basic.dataframe_func import records_to_df  # noqa: E402
 from src.post.RequestParams import RequestParams  # noqa: E402

@@ -13,8 +13,8 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr
+log = logmgr.get_logger(__name__)
 
 import pandas as pd
 from sqlalchemy import text
@@ -39,7 +39,7 @@ def sql_read(script_file: Path or str, encoding='utf8'):
 
 def sql_query(
         engine: Engine, sql: str, sql_db_switch: str = '',
-        bindparams: dict = {}, commit_after: bool = False,
+        commit_after: bool = False, params_dict: dict = '',
         fetchall: bool = True, return_df: bool = True,
         to_file: str or Path = '', excel_str_num: bool = True):
     """execute a sql query to engine
@@ -71,21 +71,13 @@ def sql_query(
             if isinstance(sql, TextClause):
                 stmt = sql
             else:
-                if bindparams:
-                    stmt = text(sql)
-                    for bind_key, params in bindparams.items():
-                        log.debug("bindparams[{0}]: {1}".format(bind_key, params))
-                        for key, value in params.items():
-                            if key == 'value':
-                                stmt = stmt.bindparams(bindparam(bind_key, value=value))
-                            # elif key == 'type_':
-                            #     stmt = stmt.bindparams(bindparam(bind_key, type_=value))
-                            # elif key == 'unique':
-                            #     stmt = stmt.bindparams(bindparam(bind_key, unique=value))
-                else:
-                    stmt = text(sql)
+                stmt = text(sql)
+            if params_dict:
+                for key, value in params_dict.items():
+                    expand = True if isinstance(value, list) else False
+                    stmt = stmt.bindparams(bindparam(key, expanding=expand))
             log.debug("stmt: %s", stmt.compile(compile_kwargs={"literal_binds": True}))
-            result = conn.execute(stmt)
+            result = conn.execute(stmt, params_dict) if params_dict else conn.execute(stmt)
             # result.keys()  # result.RMKeyView, list-like object
             # result.all()  # list of tuple, same to fetchall()
             # result.fetchmany(size=2)  # list of one tuple
@@ -113,10 +105,26 @@ if __name__ == '__main__':
     from src.manager.EngineManager import EngineManager  # noqa: E402
 
     manager = EngineManager()
+
+    # testing sql_query
+    manager.set_engine('mysql_local', future=True)
+    engine_mssql = manager.get_engine('mysql_local')
+    # no params
+    sql = 'SELECT * FROM count_uncheck WHERE DATE(time_create) = "2021/08/10" and `all` > 300'
+    sql_result = sql_query(
+        engine_mssql, sql=sql, sql_db_switch='USE sys', return_df=True)
+    log.info(sql_result)
+
+    # with params
+    sql = 'SELECT * FROM count_uncheck WHERE DATE(time_create) in :dates and `all` > :all_nums'
+    params = {'dates': ['2021/08/10', '2021/08/11', '2021/08/12'], 'all_nums': 350}
+    sql_result = sql_query(
+        engine_mssql, sql=sql, sql_db_switch='USE sys', params_dict=params, return_df=True)
+    log.info(sql_result)
+
+    # testing sql_read
     manager.set_engine('164', future=True)
     engine_164 = manager.get_engine('164')
-
-    # testing sql_read and sql_query
     sql = sql_read(cwdPath.joinpath('res\\dev\\test_year.txt'))
     outfile = 'D:\\test.xlsx'
     sql_result = sql_query(
