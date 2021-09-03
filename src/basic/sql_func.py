@@ -68,10 +68,7 @@ def sql_query(
         with engine.connect() as conn:
             if sql_db_switch:
                 conn.execute(text(sql_db_switch))
-            if isinstance(sql, TextClause):
-                stmt = sql
-            else:
-                stmt = text(sql)
+            stmt = sql if isinstance(sql, TextClause) else text(sql)
             if params_dict:
                 for key, value in params_dict.items():
                     expand = True if isinstance(value, list) else False

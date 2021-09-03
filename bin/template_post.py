@@ -135,5 +135,6 @@ if __name__ == '__main__':
                         date=time.strftime("%Y%m%d-%H%M%S", time.localtime())),
                     col_list=['id', ],  # 根据需要的字段自行调整
                     max_page=100,
-                    not_in_dict={}
+                    row_in_col_to_discard={},
+                    timestamp_to_datetime={}
                 )

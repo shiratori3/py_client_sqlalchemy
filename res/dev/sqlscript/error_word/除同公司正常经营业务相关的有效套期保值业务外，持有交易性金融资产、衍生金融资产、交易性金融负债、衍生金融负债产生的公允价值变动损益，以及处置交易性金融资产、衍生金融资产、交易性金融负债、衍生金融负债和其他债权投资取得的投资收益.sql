@@ -44,9 +44,9 @@ WHERE
                 --AND A.DATA NOT LIKE ''
                 --AND A.DATA NOT IN ('')
                 AND (
-                        (SUBSTRING(A.DATA, 2, 1) = '公' OR SUBSTRING(A.DATA, 6, 1) = '经')
-                    AND (SUBSTRING(A.DATA, 7, 1) = '营' OR SUBSTRING(A.DATA, 46, 1) = '债')
-                    AND (SUBSTRING(A.DATA, 58, 1) = '允' OR SUBSTRING(A.DATA, 103, 1) = '权')
+                        (SUBSTRING(A.DATA, 16, 1) = '套' OR SUBSTRING(A.DATA, 17, 1) = '期')
+                    AND (SUBSTRING(A.DATA, 55, 1) = '产' OR SUBSTRING(A.DATA, 56, 1) = '生')
+                    AND (SUBSTRING(A.DATA, 68, 1) = '处' OR SUBSTRING(A.DATA, 69, 1) = '置')
                     --AND (SUBSTRING(A.DATA, , 1) = '' OR SUBSTRING(A.DATA, , 1) = '')
                     --AND (SUBSTRING(A.DATA, , 1) = '' OR SUBSTRING(A.DATA, , 1) = '')
                     --AND (SUBSTRING(A.DATA, , 1) = '' OR SUBSTRING(A.DATA, , 1) = '')
@@ -61,9 +61,9 @@ WHERE
                 --AND A.DATA NOT IN ('')
                 AND (
                         (
-                            SUBSTRING(A.DATA, 2+1, 1) LIKE '[公经]' 
-                        AND SUBSTRING(A.DATA, 7+1, 1) LIKE '[营债]'
-                        AND (SUBSTRING(A.DATA, 58+1, 1) LIKE '[允权]')
+                            SUBSTRING(A.DATA, 16+1, 1) LIKE '[套期]' 
+                        AND SUBSTRING(A.DATA, 55+1, 1) LIKE '[产生]'
+                        AND (SUBSTRING(A.DATA, 68+1, 1) LIKE '[处置]')
                         --AND (SUBSTRING(A.DATA, +1, 1) LIKE '[]')
                         --AND (SUBSTRING(A.DATA, +1, 1) LIKE '[]')
                         --AND (SUBSTRING(A.DATA, +1, 1) LIKE '[]')
@@ -76,12 +76,12 @@ WHERE
                 --AND A.DATA NOT IN ('')
                 AND (
                         (
-                            SUBSTRING(A.DATA, 2-1, 1) LIKE '[公经]' 
-                        AND SUBSTRING(A.DATA, 7-1, 1) LIKE '[营债]'
-                        AND (SUBSTRING(A.DATA, 58-1, 1) LIKE '[允权]')
-                        --AND (SUBSTRING(A.DATA, -1, 1) LIKE '[]')
-                        --AND (SUBSTRING(A.DATA, -1, 1) LIKE '[]')
-                        --AND (SUBSTRING(A.DATA, -1, 1) LIKE '[]')
+                            SUBSTRING(A.DATA, 16, 1) LIKE '[套期]' 
+                        AND SUBSTRING(A.DATA, 55, 1) LIKE '[产生]'
+                        AND (SUBSTRING(A.DATA, 68, 1) LIKE '[处置]')
+                        --AND (SUBSTRING(A.DATA, , 1) LIKE '[]')
+                        --AND (SUBSTRING(A.DATA, , 1) LIKE '[]')
+                        --AND (SUBSTRING(A.DATA, , 1) LIKE '[]')
                     )
                     --OR  (SUBSTRING(A.DATA, 3, 1) LIKE '[]' AND SUBSTRING(A.DATA, L_WORD-3, 1) = '[]')
                 )

@@ -76,12 +76,12 @@ WHERE
                 --AND A.DATA NOT IN ('')
                 AND (
                         (
-                            SUBSTRING(A.DATA, {pos_list[0]}-1, 1) LIKE '[{char_list[0]}{char_list[1]}]' 
-                        AND SUBSTRING(A.DATA, {pos_list[2]}-1, 1) LIKE '[{char_list[2]}{char_list[3]}]'
-                        --AND (SUBSTRING(A.DATA, {pos_list[4]}-1, 1) LIKE '[{char_list[4]}{char_list[5]}]')
-                        --AND (SUBSTRING(A.DATA, {pos_list[6]}-1, 1) LIKE '[{char_list[6]}{char_list[7]}]')
-                        --AND (SUBSTRING(A.DATA, {pos_list[8]}-1, 1) LIKE '[{char_list[8]}{char_list[9]}]')
-                        --AND (SUBSTRING(A.DATA, {pos_list[10]}-1, 1) LIKE '[{char_list[10]}{char_list[11]}]')
+                            SUBSTRING(A.DATA, {pos_list[0]}, 1) LIKE '[{char_list[0]}{char_list[1]}]' 
+                        AND SUBSTRING(A.DATA, {pos_list[2]}, 1) LIKE '[{char_list[2]}{char_list[3]}]'
+                        --AND (SUBSTRING(A.DATA, {pos_list[4]}, 1) LIKE '[{char_list[4]}{char_list[5]}]')
+                        --AND (SUBSTRING(A.DATA, {pos_list[6]}, 1) LIKE '[{char_list[6]}{char_list[7]}]')
+                        --AND (SUBSTRING(A.DATA, {pos_list[8]}, 1) LIKE '[{char_list[8]}{char_list[9]}]')
+                        --AND (SUBSTRING(A.DATA, {pos_list[10]}, 1) LIKE '[{char_list[10]}{char_list[11]}]')
                     )
                     --OR  (SUBSTRING(A.DATA, 3, 1) LIKE '[]' AND SUBSTRING(A.DATA, L_WORD-3, 1) = '[]')
                 )

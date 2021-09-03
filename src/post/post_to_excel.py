@@ -63,8 +63,8 @@ def post_for_records_list(request_params: RequestParams, payload_conf: str, max_
 def post_to_excel(
         request_params: RequestParams, payload_conf: str,
         excel_fpath: str, excel_fname: str, col_list: list,
-        day_range: list = [], max_page: int = 10, not_in_dict: dict = {},
-        sample_num: bool = False):
+        day_range: list = [], max_page: int = 10, row_in_col_to_discard: dict = {},
+        sample_num: bool = False, timestamp_to_datetime: dict = {}):
     """post to get responses and output the result to a excel file
 
     Args:
@@ -84,12 +84,17 @@ def post_to_excel(
             For example, ["2021-08-22T00:00:00.000Z", "2021-08-23T00:00:00.000Z"]
         max_page: int, default 10
             the maximum page num to get responses
-        not_in_dict: dict, default {}
-            a dicf to exclude some values from the converted dataframe
+        row_in_col_to_discard: dict, default {}
+            a dicf to exclude some rows in cols from the converted dataframe
 
             For example, {'id': ['1111']} will exclude the value '1111' in col named 'id'
         sample_num: int, default 0
             return a sample dataframe with sample_num rows as the final result
+        timestamp_to_datetime: dict, default {}
+            a dict to convert timestamp data in cols in the converted dataframe
+
+            For example, {'lastModifiedDate': 'ms'} will convert the timestamps
+            in col named 'lastModifiedDate' with pd.to_datetime(unit='ms')
     """
     request_params.read_payload(payload_conf, show_payload=False, day_range=day_range)
 
@@ -102,8 +107,9 @@ def post_to_excel(
             records_list,
             col_list_request=col_list,
             to_file=excel_fpath + excel_fname,
-            not_in_dict=not_in_dict,
-            sample_num=sample_num
+            row_in_col_to_discard=row_in_col_to_discard,
+            sample_num=sample_num,
+            timestamp_to_datetime=timestamp_to_datetime
         )
         log.debug("records_df: %s", records_df)
     else:
@@ -117,9 +123,9 @@ if __name__ == '__main__':
     import time
     post_to_excel(
         request_params,
-        payload_conf='excel_uncheck.yaml',
-        excel_fpath='D:\\zhouzp\\__working__\\_每日跟踪\\华泰分配\\',
-        excel_fname='待稽核_{date}.xlsx'.format(
+        payload_conf='excel_check_tan_latest.yaml',
+        excel_fpath='D:\\',
+        excel_fname='测试_{date}.xlsx'.format(
             date=time.strftime("%Y%m%d-%H%M%S", time.localtime())),
         col_list=['id', 'formYear', 'status', 'auditProcessName', 'fileName', 'subjectName', 'enableTypeName', 'suspensionName', 'taskPoolName'],
         max_page=100,

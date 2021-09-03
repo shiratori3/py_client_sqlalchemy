@@ -192,12 +192,11 @@ class RequestParams(object):
 
     def update_payload_page(self, payload_conf_fname: str, step: int = 1):
         """update page param in payload"""
-        log.debug(self.payloads[payload_conf_fname])
-        log.debug(self.payload_curpage_dict[payload_conf_fname])
         self.payloads[payload_conf_fname] = self.payloads[payload_conf_fname].replace(
             '"current":' + str(self.payload_curpage_dict[payload_conf_fname]) + ',"',
             '"current":' + str(self.payload_curpage_dict[payload_conf_fname] + step) + ',"'
         )
+        self.payload_curpage_dict[payload_conf_fname] += step
 
     def _update_payload_params(self, day_range: list = []) -> None:
         """update the params in readed payload"""
