@@ -16,27 +16,27 @@ sys.path.append(str(cwdPath))
 from src.manager.LogManager import logmgr  # noqa: E402
 log = logmgr.get_logger(__name__)
 
-from src.post.RequestParams import RequestParams  # noqa: E402
+from src.post.RequestManager import RequestManager  # noqa: E402
 
 
-def pool_change(request_params: RequestParams, payload_conf: str, url_type: str = 'urlChange', task_type: str = ''):
+def pool_change(request_mgr: RequestManager, payload_conf: str, url_type: str = 'urlChange', task_type: str = ''):
     """post to change the pool
 
     Args:
-        request_params: RequestParams
-            a RequestParams instance
+        request_params: RequestManager
+            a RequestManager instance
         payload_conf: str
-            the name of payload_conf_fname to read from RequestParams
+            the name of payload_conf_fname to read from RequestManager
         url_type: str, default 'urlChange'
-            the url_type to read from RequestParams
+            the url_type to read from RequestManager
         task_type: str, default ''
             a str that describe the pool change action
     """
-    request_params.read_payload(payload_conf, show_payload=False, no_page=True)
-    response = request_params.send_request(
+    request_mgr.read_payload(payload_conf, show_payload=False, no_page=True)
+    response = request_mgr.send_request(
         'POST',
-        url=request_params.read_url(url_type),
-        payload_from_conf=payload_conf
+        url=request_mgr.read_url(url_type),
+        request_payloads=request_mgr.payloads[payload_conf]
     )
     if response and isinstance(response, dict):
         if url_type == 'urlChange':
@@ -50,16 +50,18 @@ def pool_change(request_params: RequestParams, payload_conf: str, url_type: str 
 
 
 if __name__ == '__main__':
-    request_params = RequestParams()
+    request_params = RequestManager()
     request_params.read_conf('settings.yaml')
 
-    pool_change(
-        request_params,
-        payload_conf='poolchange_juno_error_inner.yaml',
-        url_type='urlgetSql', task_type='内部专项校验错误-全量'
-    )
-    # pool_change(
-    #     request_params,
-    #     payload_conf='poolchange_juno_error_inner.yaml',
-    #     url_type='urlChange', task_type='内部专项校验错误-全量'
-    # )
+    if False:
+        pool_change(
+            request_params,
+            payload_conf='poolchange_juno_error_inner.yaml',
+            url_type='urlgetSql', task_type='内部专项校验错误-全量'
+        )
+    if False:
+        pool_change(
+            request_params,
+            payload_conf='poolchange_juno_error_inner.yaml',
+            url_type='urlChange', task_type='内部专项校验错误-全量'
+        )

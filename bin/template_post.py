@@ -3,7 +3,7 @@
 '''
 @File    :   template.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/09/18
 @Desc    :   None
 '''
 
@@ -20,10 +20,10 @@ import time
 import datetime
 
 if __name__ == '__main__':
-    from src.post.num_count import num_count
+    from src.post.get_nums import get_nums
     from src.post.pool_change import pool_change
-    from src.post.post_to_excel import post_to_excel
-    from src.post.RequestParams import RequestParams
+    from src.post.requests_to_excel import requests_to_excel
+    from src.post.RequestManager import RequestManager
 
     # 控制区域
     if True:
@@ -68,11 +68,9 @@ if __name__ == '__main__':
 
     # 实际执行区域
     if True:
-        run_time_1 = False  # 测试
-
         # 初始化
-        request_params = RequestParams()
-        request_params.read_conf('settings.yaml')
+        request_mgr = RequestManager()
+        request_mgr.read_conf('settings.yaml')
 
         if to_count:
             if insert_to_db:
@@ -86,29 +84,28 @@ if __name__ == '__main__':
 
             # 测试-进度查询
             if query_test_all:
-                run_time_1, uncheck_all, uncheck_pushed = num_count(
-                    request_params, {
-                        'query_test_all.yaml': 'url',
-                        'query_test_pushed.yaml': 'url',
-                    },
-                    diff_count=True
+                run_time_1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                uncheck_nums = get_nums(
+                    request_mgr,
+                    cwdPath.joinpath('conf\\task\\count_uncheck.yaml')
                 )
+                log.info('unchecked: all: {}, push: {}'.format(uncheck_nums[0], uncheck_nums[1]))
                 if insert_to_db and engine_mysql:
-                    if run_time_1:
+                    if uncheck_nums[0] is not False and uncheck_nums[1] is not False:
                         sql = 'INSERT INTO count_uncheck(`time_create`, `all`, `pushed`) VALUES (:t, :all, :pushed)'
                         bparams = {
-                            't': {'value': run_time_1},
-                            'all': {'value': uncheck_all},
-                            'pushed': {'value': uncheck_pushed},
+                            't': run_time_1,
+                            'all': uncheck_nums[0],
+                            'pushed': uncheck_nums[1],
                         }
-                        sql_query(engine_mysql, sql=sql, bindparams=bparams, commit_after=True, return_df=False)
+                        sql_query(engine_mysql, sql=sql, params_dict=bparams, commit_after=True, return_df=False)
 
         time.sleep(30) if to_count else time.sleep(1)
         if to_change:
             # 切换池子-测试-2021
             if run_time_1 and poolchange_test_2021:
                 pool_change(
-                    request_params,
+                    request_mgr,
                     payload_conf='poolchange_uncheck_2021.yaml',
                     url_type='change', task_type='测试'
                 )
@@ -117,7 +114,7 @@ if __name__ == '__main__':
             # 切换池子-测试-all
             if poolchange_test:
                 pool_change(
-                    request_params,
+                    request_mgr,
                     payload_conf='poolchange_uncheck.yaml',
                     url_type='change', task_type='测试-all'
                 )
@@ -127,14 +124,18 @@ if __name__ == '__main__':
         if to_excel:
             if excel_test:
                 # 测试-全量
-                post_to_excel(
-                    request_params,
-                    payload_conf='excel_test.yaml',
-                    excel_fpath='D:\\',
-                    excel_fname='测试_{date}.xlsx'.format(
+                requests_to_excel(
+                    request_mgr,
+                    payload_conf='excel\\excel_test.yaml',
+                    excel_fpath='D:\\测试_{date}.xlsx'.format(
                         date=time.strftime("%Y%m%d-%H%M%S", time.localtime())),
                     col_list=['id', ],  # 根据需要的字段自行调整
                     max_page=100,
+                    row_in_col_to_capture={},
                     row_in_col_to_discard={},
-                    timestamp_to_datetime={}
+                    day_range=[s_range, e_range],
+                    sample_num=20,
+                    timestamp_to_datetime={
+                        'lastModifiedDate': 'ms'
+                    }
                 )
