@@ -3,7 +3,7 @@
 '''
 @File    :   RequestParams.py
 @Author  :   Billy Zhou
-@Time    :   2021/09/18
+@Time    :   2021/09/22
 @Desc    :   None
 '''
 
@@ -20,6 +20,7 @@ import time
 import datetime
 import requests
 from src.manager.main import conf  # noqa: E402
+from src.post.task_msgs import request_task_msgs  # noqa: E402
 
 
 class RequestManager(object):
@@ -128,6 +129,7 @@ class RequestManager(object):
         # add to dict of payload
         self.payloads[payload_conf_fname] = self._payload_str
 
+    @request_task_msgs
     def send_request(
             self, request_method: str, url: str,
             request_payloads: str = '', request_headers: str = '') -> dict or requests.Response:
@@ -169,7 +171,7 @@ class RequestManager(object):
         log.debug("response.text: %s", response.text)
         try:
             response_jsondict = response.json()
-            log.warning("response_msg: %s", response_jsondict['msg'])
+            log.debug("response_msg: %s", response_jsondict['msg'])
             if response_jsondict['code'] != 200:
                 log.error("request failed.")
                 log.warning(f"request_method: {request_method}")

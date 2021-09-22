@@ -20,9 +20,9 @@ import time
 import datetime
 
 if __name__ == '__main__':
-    from src.post.get_nums import get_nums
-    from src.post.pool_change import pool_change
-    from src.post.requests_to_excel import requests_to_excel
+    from src.post.task_scripts import get_nums
+    from src.post.task_scripts import change_pools
+    from src.post.task_scripts import requests_to_excel
     from src.post.RequestManager import RequestManager
 
     # 控制区域
@@ -52,16 +52,7 @@ if __name__ == '__main__':
             # 进度查询的控制开关
             query_test_all = True  # 测试-进度查询
 
-        if to_change:
-            # 切换池子的控制开关
-            poolchange_test = True  # 测试
-            poolchange_test_2021 = True  # 测试-2021
-
         if to_excel:
-            # 对应数据导出的控制开关
-            # 全量均不包含失效或已暂停的数据
-            excel_test = True  # 测试
-
             # 抽检日期范围，以天为单位，以本日为基数
             s_range = -3 if datetime.datetime.now().weekday() == 0 else -1
             e_range = 0
@@ -84,17 +75,16 @@ if __name__ == '__main__':
 
             # 测试-进度查询
             if query_test_all:
-                run_time_1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 uncheck_nums = get_nums(
                     request_mgr,
-                    cwdPath.joinpath('conf\\task\\count_uncheck.yaml')
+                    cwdPath.joinpath('res\\dev\\test_sample_count.yaml')
                 )
                 log.info('unchecked: all: {}, push: {}'.format(uncheck_nums[0], uncheck_nums[1]))
                 if insert_to_db and engine_mysql:
                     if uncheck_nums[0] is not False and uncheck_nums[1] is not False:
                         sql = 'INSERT INTO count_uncheck(`time_create`, `all`, `pushed`) VALUES (:t, :all, :pushed)'
                         bparams = {
-                            't': run_time_1,
+                            't': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                             'all': uncheck_nums[0],
                             'pushed': uncheck_nums[1],
                         }
@@ -102,40 +92,17 @@ if __name__ == '__main__':
 
         time.sleep(30) if to_count else time.sleep(1)
         if to_change:
-            # 切换池子-测试-2021
-            if run_time_1 and poolchange_test_2021:
-                pool_change(
-                    request_mgr,
-                    payload_conf='poolchange_uncheck_2021.yaml',
-                    url_type='change', task_type='测试'
-                )
-                time.sleep(2)
-
-            # 切换池子-测试-all
-            if poolchange_test:
-                pool_change(
-                    request_mgr,
-                    payload_conf='poolchange_uncheck.yaml',
-                    url_type='change', task_type='测试-all'
-                )
-                time.sleep(2)
+            # 切换池子-测试
+            change_pools(
+                request_mgr,
+                cwdPath.joinpath('res\\dev\\test_sample_poolchange.yaml')
+            )
 
         time.sleep(10) if to_change else time.sleep(1)
         if to_excel:
-            if excel_test:
-                # 测试-全量
-                requests_to_excel(
-                    request_mgr,
-                    payload_conf='excel\\excel_test.yaml',
-                    excel_fpath='D:\\测试_{date}.xlsx'.format(
-                        date=time.strftime("%Y%m%d-%H%M%S", time.localtime())),
-                    col_list=['id', ],  # 根据需要的字段自行调整
-                    max_page=100,
-                    row_in_col_to_capture={},
-                    row_in_col_to_discard={},
-                    day_range=[s_range, e_range],
-                    sample_num=20,
-                    timestamp_to_datetime={
-                        'lastModifiedDate': 'ms'
-                    }
-                )
+            # 导出至excel
+            requests_to_excel(
+                request_mgr,
+                cwdPath.joinpath('res\\dev\\test_sample_excel.yaml'),
+                day_range=[s_range, e_range]
+            )

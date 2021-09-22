@@ -28,8 +28,8 @@ from operator import or_
 
 def records_to_df(
         records_list: List[dict],
-        col_list_request: List[str] = [], empty_str2nan: bool = True,
         to_file: str = '', excel_str_num: bool = True,
+        empty_str2nan: bool = True, col_list_to_capture: List[str] = [],
         row_in_col_to_capture: dict = {}, row_in_col_to_discard: dict = {},
         sample_num: int or float = 0,
         timestamp_to_datetime: dict = {}, utc_add: bool = True,):
@@ -39,14 +39,14 @@ def records_to_df(
     ----
         records_list: List[dict]
             a list of records to convert
-        col_list_request: List[str], default []
-            a list of colname to filter the converted dataframe
-        empty_str2nan: bool, default True
-            whether to convert empty string like '' or '\n' or ' ' to np.nan
         to_file: str, optional, default ''
             the filepath of output file, can be .csv or .xlsx
         excel_str_num: bool, default True
             define the num type in output file, work only in excel file
+        empty_str2nan: bool, default True
+            whether to convert empty string like '' or '\n' or ' ' to np.nan
+        col_list_to_capture: List[str], default []
+            a list of colname to filter the converted dataframe
         row_in_col_to_capture: dict, default {}
         row_in_col_to_discard: dict, default {}
             a dict to filter rows in cols from the dataframe.
@@ -68,13 +68,13 @@ def records_to_df(
         utc_add: bool, default True
             whether add the timedelta between localtime and utc when convert timestamp
     """
-    log.info("len(records_list): %s", len(records_list))
+    log.info("len of records_list: %s", len(records_list))
 
-    # convert reords to df and filter the df with col_list_request
+    # convert reords to df and filter the df with col_list_to_capture
     df_full = pd.DataFrame.from_records(records_list)
     log.debug("df_full.columns: \n{}".format(df_full.columns))
 
-    df = df_full[col_list_request] if col_list_request else df_full
+    df = df_full[col_list_to_capture] if col_list_to_capture else df_full
     if empty_str2nan:
         # replace '' with np.NaN
         # \s matches any whitespace character (equivalent to [\r\n\t\f\v ])
@@ -90,7 +90,7 @@ def records_to_df(
     sample_num = int(sample_num * len(df_filtered)) if sample_num < 1 and sample_num > 0 and isinstance(
         sample_num, float) else abs(int(sample_num))
     df_filtered_sampled = df_filtered.sample(n=sample_num) if sample_num and sample_num < len(df_filtered) else df_filtered
-    log.info("len(df_filtered_sampled): %s", len(df_filtered_sampled))
+    log.info("len of df_filtered_sampled: %s", len(df_filtered_sampled))
 
     # check the vaild of timestamp_to_datetime and try to convert the type of cols in df
     for col_name, timestamp_unit in timestamp_to_datetime.items():
@@ -155,16 +155,16 @@ def df_filter_by_dict(filter_type: str, df: pd.DataFrame, row_in_col_dict: dict)
     if not row_in_col_dict:
         return df
     else:
+        # check row_in_col_dict before creating masks
+        log.debug("row_in_col_dict before checked: {}".format(row_in_col_dict))
+        dict_vaild_in_df(row_in_col_dict, df)
+        log.debug("row_in_col_dict after checked: {}".format(row_in_col_dict))
+
         # generate masks according to the row_in_col_dict
         null_mask = create_mask_from_dict('null', df, row_in_col_dict)
         log.debug("null_mask: \n{}".format(null_mask))
         contain_mask = create_mask_from_dict('contain', df, row_in_col_dict)
         log.debug("contain_mask: \n{}".format(contain_mask))
-
-        # check row_in_col_dict before creating include_mask
-        log.debug("row_in_col_dict before checked: {}".format(row_in_col_dict))
-        dict_vaild_in_df(row_in_col_dict, df)
-        log.debug("row_in_col_dict after checked: {}".format(row_in_col_dict))
         include_mask = pd.Series(
             [row_value in row_values for col_name, row_values in row_in_col_dict.items() for row_value in df[col_name]],
             dtype=object

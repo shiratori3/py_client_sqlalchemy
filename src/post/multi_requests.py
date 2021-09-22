@@ -3,7 +3,7 @@
 '''
 @File    :   multi_requests.py
 @Author  :   Billy Zhou
-@Time    :   2021/09/18
+@Time    :   2021/09/22
 @Desc    :   None
 '''
 
@@ -23,51 +23,29 @@ from src.post.RequestManager import RequestManager  # noqa: E402
 from src.manager.main import conf  # noqa: E402
 
 
-def send_request_with_dict(
-        request_mgr: RequestManager, params: dict = {
-            'request_method': "POST",
-            'url_type': 'url',
-            'conf_name': 'query\\query_RWID.yaml',
-            'replace_word': '"RWID"',
-        }, replace_word: str = ''):
-    """send a request using params in a dict"""
-    if params['request_method'].upper() == 'GET':
-        return request_mgr.send_request(
-            "GET",
-            url=request_mgr.read_url(params['url_type']),
-        )
-    else:
-        if replace_word:
-            payloads = request_mgr.payloads[
-                params['conf_name']].replace(
-                params['replace_word'], replace_word)
-        else:
-            payloads = request_mgr.payloads[params['conf_name']]
-        return request_mgr.send_request(
-            "POST",
-            url=request_mgr.read_url(params['url_type']),
-            request_payloads=payloads
-        )
-
-
 def multi_requests_by_dicts(
         request_mgr: RequestManager,
         requests_dict: Dict[dict, dict] = {
-            "check_ids": {
+            "your_task_name": {
+                'task_vaild': False,
+                'task_name': 'your_task_name',
                 'no_page': True,
                 'request_method': "POST",
                 'url_type': 'url',
                 'conf_name': 'query\\query_RWID.yaml',
-                'replace_word': '"RWID"',
+                'replace_word': 'RWID',
             },
         },
         from_file: Path = '',
+        from_list: list = [],
         sleep_time: float = 0.3):
     """"""
     if from_file:
         params_list = conf.read_conf_from_file(from_file).split(" ")
-        progress_tot = len(params_list)
         log.debug('params_list: {}'.format(params_list))
+        progress_tot = len(params_list)
+    elif from_list:
+        progress_tot = len(from_list)
 
     task_no = 0
     task_tot = len(requests_dict)
@@ -77,9 +55,9 @@ def multi_requests_by_dicts(
         log.info(f'task progress of multi_requests: {task_no}/{task_tot}')
 
         responses_dict[task_name] = []
-        request_mgr.read_payload(rq_args['conf_name'], no_page=rq_args['no_page'])
+        request_mgr.read_payload(rq_args['conf_name'], no_page=rq_args.get('no_page', True))
 
-        if not from_file:
+        if not from_file and not from_list:
             try:
                 response = send_request_with_dict(request_mgr, rq_args)
                 if response:
@@ -151,7 +129,7 @@ def multi_requests_increment(
             if looptime > max_limit:
                 looptime = max_limit
             log.info("looptime: %s", looptime)
-            for i in range(1, looptime):
+            for _ in range(1, looptime):
                 # update page param in payload
                 request_mgr.update_payload_page(payload_conf, step=step)
                 response_dict_looped = request_mgr.send_request(
@@ -163,6 +141,43 @@ def multi_requests_increment(
                     records_list.extend(response_dict_looped['data']['records'])
 
         return records_list
+
+
+def send_request_with_dict(
+        request_mgr: RequestManager, params: dict = {
+            'task_vaild': True,
+            'task_name': '',
+            'request_method': "POST",
+            'url_type': 'url',
+            'conf_name': 'query\\query_RWID.yaml',
+            'replace_word': 'RWID',
+        }, replace_word: str = ''):
+    """send a request using params in a dict"""
+    if not params.get('task_vaild', True):
+        if params.get('task_name', ''):
+            log.warning('The task[{}] is unvaild. Pass'.format(params['task_name']))
+    else:
+        if params['request_method'].upper() == 'GET':
+            return request_mgr.send_request(
+                "GET",
+                url=request_mgr.read_url(params['url_type']),
+                url_type=params['url_type'],
+                task_name=params.get('task_name', '')
+            )
+        else:
+            if replace_word and params.get('replace_word'):
+                payloads = request_mgr.payloads[
+                    params['conf_name']].replace(
+                    params['replace_word'], replace_word)
+            else:
+                payloads = request_mgr.payloads[params['conf_name']]
+            return request_mgr.send_request(
+                "POST",
+                url=request_mgr.read_url(params['url_type']),
+                request_payloads=payloads,
+                url_type=params['url_type'],
+                task_name=params.get('task_name', '')
+            )
 
 
 if __name__ == '__main__':

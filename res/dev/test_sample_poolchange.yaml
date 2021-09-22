@@ -1,0 +1,19 @@
+poolchange_juno_error_outer_2021:
+    task_vaild: True
+    task_name: 外部专项校验错误-2021  # optional, the name of task
+    request_method: POST
+    url_type: urlChange  # the key to read, conf_dict['url'][url_type] of settings.yaml
+    conf_name: poolchange\poolchange_juno_error_outer_2021.yaml  # the abs path is cwdPath.joinpath('\\conf\\post' + conf_name)
+poolchange_juno_error_outer:
+    task_vaild: True
+    task_name: 外部专项校验错误-全量  # optional, the name of task
+    request_method: POST
+    url_type: urlChange  # the key to read, conf_dict['url'][url_type] of settings.yaml
+    conf_name: poolchange\poolchange_juno_error_outer.yaml  # the abs path is cwdPath.joinpath('\\conf\\post' + conf_name)
+poolchange_juno_error_inner:
+    task_vaild: True
+    task_name: 内部专项校验错误-全量  # optional, the name of task
+    request_method: POST
+    url_type: urlChange  # the key to read, conf_dict['url'][url_type] of settings.yaml
+    conf_name: poolchange\\poolchange_juno_error_inner.yaml  # the abs path is cwdPath.joinpath('\\conf\\post' + conf_name)
+
