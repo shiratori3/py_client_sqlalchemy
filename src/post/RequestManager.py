@@ -3,7 +3,7 @@
 '''
 @File    :   RequestParams.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/22
+@Time    :   2021/09/22
 @Desc    :   None
 '''
 
@@ -13,19 +13,21 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger  # noqa: E402
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr  # noqa: E402
+log = logmgr.get_logger(__name__)
 
 import time
 import datetime
 import requests
 from src.manager.main import conf  # noqa: E402
+from src.post.task_msgs import request_task_msgs  # noqa: E402
 
 
-class RequestParams(object):
-    """Manage the urls, headers and payloads to create requests
+class RequestManager(object):
+    """Manage the urls, headers and payloads to create and send requests
 
     Attrs:
+    -----
         conf_path: Path, default cwdPath.joinpath('conf/post')
             the directory of conf files
         conf_fname: str
@@ -43,6 +45,7 @@ class RequestParams(object):
             for example, {payload_conf_fname: cur_page}
 
     Methods:
+    -------
         read_conf(self, conf_fname: str) -> None:
             read from conf_path.joinpath(conf_fname) and update headers
         read_url(self, url_type: str, **params) -> str:
@@ -55,8 +58,7 @@ class RequestParams(object):
         update_payload_page(self, payload_conf_fname: str, step: int = 1):
             update page param in payload
         send_request(
-                self, send_type: str, url: str,
-                payload_from_conf: str = '',
+                self, request_method: str, url: str,
                 request_payloads: str = '', request_headers: str = ''
             ) -> dict or requests.Response:
             send a request and return response
@@ -95,7 +97,7 @@ class RequestParams(object):
 
     def read_payload(
             self, payload_conf_fname: str,
-            show_payload: bool = False, no_page: bool = False, day_range: list = []) -> None:
+            show_payload: bool = False, no_page: bool = True, day_range: list = []) -> None:
         """read payload from conf_path.joinpath(payload_conf_fname) and update params in payload
 
         Args:
@@ -127,9 +129,9 @@ class RequestParams(object):
         # add to dict of payload
         self.payloads[payload_conf_fname] = self._payload_str
 
+    @request_task_msgs
     def send_request(
-            self, send_type: str, url: str,
-            payload_from_conf: str = '',
+            self, request_method: str, url: str,
             request_payloads: str = '', request_headers: str = '') -> dict or requests.Response:
         """send a request and return response
 
@@ -137,12 +139,10 @@ class RequestParams(object):
         if response code not equal to 200, output the info of params for debug.
 
         Args:
-            send_type: str
-                the method to post, must in ['POST', 'GET']
+            request_method: str
+                the method to send request, must in ['POST', 'GET']
             url: str
                 the url to send a request and get response
-            payload_from_conf: str, default ''
-                the name of payload_conf_fname to read from RequestParams
             request_payloads: str, default ''
             request_headers: str, default ''
                 the payload and header used to create request instead of those in RequestParams
@@ -150,22 +150,20 @@ class RequestParams(object):
         Returns:
             a dict of json type or requests.Response if response.json() failed
         """
-        if send_type.upper() not in ['POST', 'GET']:
-            raise ValueError('Invaild send_type[{}]. Please input POST or GET.'.format(send_type))
+        if request_method.upper() not in ['POST', 'GET']:
+            raise ValueError('Invaild request_method[{}]. Please input POST or GET.'.format(request_method))
 
         headers = request_headers if request_headers else self.headers
-        if payload_from_conf or request_payloads:
-            payload_data = request_payloads if request_payloads else self.payloads[payload_from_conf]
+        if request_payloads:
             response = requests.request(
-                send_type,
+                request_method,
                 url=url,
                 headers=headers,
-                data=payload_data
+                data=request_payloads
             )
         else:
-            payload_data = ''
             response = requests.request(
-                send_type,
+                request_method,
                 url=url,
                 headers=headers
             )
@@ -173,31 +171,32 @@ class RequestParams(object):
         log.debug("response.text: %s", response.text)
         try:
             response_jsondict = response.json()
-            log.warning("response_msg: %s", response_jsondict['msg'])
+            log.debug("response_msg: %s", response_jsondict['msg'])
             if response_jsondict['code'] != 200:
                 log.error("request failed.")
+                log.warning(f"request_method: {request_method}")
                 log.warning("response.text[:1000]: %s", response.text[:1000])
-                log.warning("url: %s", url)
-                log.warning("headers: %s", headers)
-                log.warning("payload: %s", payload_data)
+                log.warning(f"url: {url}", )
+                log.warning("headers: {}".format(headers))
+                log.warning("payload: {}".format(request_payloads))
             else:
                 return response_jsondict
         except Exception:
             log.error('The response body does not contain valid json. Return requests.Response')
+            log.error(f"request_method: {request_method}")
             log.error("response.text[:1000]: %s", response.text[:1000])
-            log.error("url: %s", url)
-            log.error("headers: %s", headers)
-            log.error("payload: %s", payload_data)
+            log.error(f"url: {url}", )
+            log.error("headers: {}".format(headers))
+            log.error("payload: {}".format(request_payloads))
             return response
 
     def update_payload_page(self, payload_conf_fname: str, step: int = 1):
         """update page param in payload"""
-        log.debug(self.payloads[payload_conf_fname])
-        log.debug(self.payload_curpage_dict[payload_conf_fname])
         self.payloads[payload_conf_fname] = self.payloads[payload_conf_fname].replace(
             '"current":' + str(self.payload_curpage_dict[payload_conf_fname]) + ',"',
             '"current":' + str(self.payload_curpage_dict[payload_conf_fname] + step) + ',"'
         )
+        self.payload_curpage_dict[payload_conf_fname] += step
 
     def _update_payload_params(self, day_range: list = []) -> None:
         """update the params in readed payload"""
@@ -237,15 +236,15 @@ class RequestParams(object):
 
 
 if __name__ == '__main__':
-    request_params = RequestParams()
-    request_params.read_conf('settings.yaml')
-    log.info("headers: %s", request_params.headers)
+    request_mgr = RequestManager()
+    request_mgr.read_conf('settings.yaml')
+    log.info("headers: %s", request_mgr.headers)
 
-    url = request_params.read_url('urlgetSql')
+    url = request_mgr.read_url('urlgetSql')
     log.info("url: %s", url)
 
-    request_params.read_payload('excel_uncheck.yaml', show_payload=True, no_page=False)
-    request_params.read_payload('poolchange_juno_error_inner.yaml', show_payload=False, no_page=True)
-    request_params.read_payload('excel_check_tan_latest.yaml', show_payload=False, no_page=False, day_range=[-1, 0])
-    request_params.update_payload_page('excel_check_tan_latest.yaml', step=2)
-    log.info("payloads: %s", request_params.payloads)
+    request_mgr.read_payload('excel\\excel_uncheck.yaml', show_payload=True, no_page=False)
+    request_mgr.read_payload('poolchange\\poolchange_juno_error_inner.yaml', show_payload=False, no_page=True)
+    request_mgr.read_payload('excel\\excel_check_tan_latest.yaml', show_payload=False, no_page=False, day_range=[-1, 0])
+    request_mgr.update_payload_page('excel\\excel_check_tan_latest.yaml', step=2)
+    log.info("payloads: %s", request_mgr.payloads)

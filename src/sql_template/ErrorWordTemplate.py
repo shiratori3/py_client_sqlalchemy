@@ -13,8 +13,8 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger  # noqa: E402
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr  # noqa: E402
+log = logmgr.get_logger(__name__)
 
 from typing import List, Tuple
 from pathlib import Path
@@ -158,6 +158,7 @@ class ErrorWordTemplate(SqlTemplate):
                 for char, poi in zip(char_pairs, poi_pairs):
                     for i in range(len(char)):
                         pairs_dict[poi[i]] = char[i]
+                log.info(pairs_dict)
             else:
                 need = Counter(''.join(char_pairs))
                 for poi, char in enumerate(word_to_check):
@@ -211,15 +212,22 @@ class ErrorWordTemplate(SqlTemplate):
 if __name__ == '__main__':
     word_sql = ErrorWordTemplate()
 
-    word_sql.create_sql('车辆')
-    word_sql.create_sql('水电费')
-    word_sql.create_sql('期间费用')
-    word_sql.create_sql('可弥补亏损')
-    word_sql.create_sql('股份支付费用', char_pairs=['股份', '支付'])
+    if True:
+        # test short
+        word_sql.create_sql('车辆')
+        word_sql.create_sql('水电费')
+        word_sql.create_sql('期间费用')
+        word_sql.create_sql('可弥补亏损')
+        word_sql.create_sql('股份支付费用', char_pairs=['股份', '支付'])
 
-    word = '二、将重分类进损益的其他综合收益：权益法下可转损益的其他综合收益'
-    word_sql.print_word_position(word)
-    word_sql.create_sql(word, char_pairs=['将重', '可转', '合收'])
-    word_sql.create_sql(
-        word, char_pairs=['将重', '可转', '合收'], poi_pairs=[(3, 4), (22, 23), (30, 31)]
-    )
+    if True:
+        # test long
+        word = '二、将重分类进损益的其他综合收益：权益法下可转损益的其他综合收益'
+        # word_sql.print_word_position(word)
+        word_sql.create_sql(word, char_pairs=['将重', '可转', '合收'])
+
+        word = '除同公司正常经营业务相关的有效套期保值业务外，持有交易性金融资产、衍生金融资产、交易性金融负债、衍生金融负债产生的公允价值变动损益，以及处置交易性金融资产、衍生金融资产、交易性金融负债、衍生金融负债和其他债权投资取得的投资收益'
+        # word_sql.print_word_position(word)
+        word_sql.create_sql(
+            word, char_pairs=['套期', '产生', '处置'], poi_pairs=[(16, 17), (55, 56), (68, 69)]
+        )

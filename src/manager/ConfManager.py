@@ -13,8 +13,8 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger  # noqa: E402
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr  # noqa: E402
+log = logmgr.get_logger(__name__)
 
 from src.manager.BaseFileManager import BaseFileManager  # noqa: E402
 from src.basic.input_check import input_default  # noqa: E402
@@ -34,8 +34,6 @@ class ConfManager(BaseFileManager):
     """
     def __init__(self, conf_path: Path = cwdPath.joinpath('conf')):
         super().__init__(conf_path=conf_path)
-
-        log.debug('ConfManager inited')
 
         log.debug('ConfManager inited')
 

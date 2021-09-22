@@ -6,7 +6,7 @@
 
 ### 基础功能
 
-- 通过Logger管理器管理输出信息流，通过logging.yaml文件进行配置
+- 通过LogManager管理器管理输出信息流，通过logging.yaml文件进行配置
 - 通过Ignorer管理gitignore文件，避免文件误上传
 - 通过ConfManager管理器管理yaml形式的配置文件
 

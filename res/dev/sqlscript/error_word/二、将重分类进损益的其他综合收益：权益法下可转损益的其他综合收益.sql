@@ -76,12 +76,12 @@ WHERE
                 --AND A.DATA NOT IN ('')
                 AND (
                         (
-                            SUBSTRING(A.DATA, 3-1, 1) LIKE '[将重]' 
-                        AND SUBSTRING(A.DATA, 22-1, 1) LIKE '[可转]'
-                        AND (SUBSTRING(A.DATA, 30-1, 1) LIKE '[合收]')
-                        --AND (SUBSTRING(A.DATA, -1, 1) LIKE '[]')
-                        --AND (SUBSTRING(A.DATA, -1, 1) LIKE '[]')
-                        --AND (SUBSTRING(A.DATA, -1, 1) LIKE '[]')
+                            SUBSTRING(A.DATA, 3, 1) LIKE '[将重]' 
+                        AND SUBSTRING(A.DATA, 22, 1) LIKE '[可转]'
+                        AND (SUBSTRING(A.DATA, 30, 1) LIKE '[合收]')
+                        --AND (SUBSTRING(A.DATA, , 1) LIKE '[]')
+                        --AND (SUBSTRING(A.DATA, , 1) LIKE '[]')
+                        --AND (SUBSTRING(A.DATA, , 1) LIKE '[]')
                     )
                     --OR  (SUBSTRING(A.DATA, 3, 1) LIKE '[]' AND SUBSTRING(A.DATA, L_WORD-3, 1) = '[]')
                 )

@@ -13,8 +13,8 @@ from pathlib import Path
 cwdPath = Path(__file__).parents[2]
 sys.path.append(str(cwdPath))
 
-from src.manager.Logger import logger  # noqa: E402
-log = logger.get_logger(__name__)
+from src.manager.LogManager import logmgr  # noqa: E402
+log = logmgr.get_logger(__name__)
 
 # init instance of Manager Class
 from src.manager.ConfManager import ConfManager  # noqa: E402
@@ -39,4 +39,4 @@ if __name__ == '__main__':
 
     from src.manager.EngineManager import EngineManager  # noqa: E402
     emgr = EngineManager(cmgr_ui=cmgr_ui)
-    log.debug('emgr inited')
+    log.info('emgr inited')
