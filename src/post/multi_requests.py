@@ -20,61 +20,49 @@ log = logmgr.get_logger(__name__)
 import time
 from typing import Dict
 from src.post.RequestManager import RequestManager  # noqa: E402
+from src.post.RequestManager import send_request_with_dict  # noqa: E402
 from src.manager.main import conf  # noqa: E402
 
 
 def multi_requests_by_dicts(
         request_mgr: RequestManager,
-        requests_dict: Dict[dict, dict] = {
+        requests_dict: Dict[str, dict] = {
             "your_task_name": {
                 'task_vaild': False,
                 'task_name': 'your_task_name',
-                'no_page': True,
                 'request_method': "POST",
                 'url_type': 'url',
                 'conf_name': 'query\\query_RWID.yaml',
-                'replace_word': 'RWID',
+                'encode': 'utf-8',
+                'replace_old_dict': {'RWID': 'RWID'},
             },
         },
-        from_file: Path = '',
-        from_list: list = [],
-        sleep_time: float = 0.3):
+        replace_new_dict: Dict[str, list] = {},
+        sleep_time: float = 0.3,
+        read_encoding: str = '') -> dict:
     """"""
-    if from_file:
-        params_list = conf.read_conf_from_file(from_file).split(" ")
-        log.debug('params_list: {}'.format(params_list))
-        progress_tot = len(params_list)
-    elif from_list:
-        progress_tot = len(from_list)
-
     task_no = 0
     task_tot = len(requests_dict)
     responses_dict = {}
     for task_name, rq_args in requests_dict.items():
         task_no += 1
         log.info(f'task progress of multi_requests: {task_no}/{task_tot}')
-
-        responses_dict[task_name] = []
-        request_mgr.read_payload(rq_args['conf_name'], no_page=rq_args.get('no_page', True))
-
-        if not from_file and not from_list:
-            try:
-                response = send_request_with_dict(request_mgr, rq_args)
-                if response:
-                    log.debug(f"response: \n{response}")
-                    responses_dict[task_name].append(response)
-            except Exception as e:
-                log.error('An error occurred. {}'.format(e.args[-1]))
-            finally:
-                time.sleep(sleep_time)
+        if not rq_args.get('task_vaild', True):
+            log.warning('The task[{}] is unvaild. Pass'.format(rq_args.get('task_name', 'Unknown')))
         else:
-            # replace payloads with the params readed from file and send request
-            for no, param_to_replace in enumerate(params_list, 1):
-                log.info(f'progress of {task_name}: {no}/{progress_tot}')
+            responses_dict[task_name] = []
+            if rq_args.get('conf_name'):
+                if read_encoding:
+                    request_mgr.read_payload(
+                        rq_args['conf_name'],
+                        read_encoding=read_encoding)
+                else:
+                    request_mgr.read_payload(rq_args['conf_name'])
+
+            if not requests_dict[task_name].get('replace_old_dict'):
+                # no replace to send request
                 try:
-                    response = send_request_with_dict(
-                        request_mgr, rq_args, replace_word=param_to_replace
-                    )
+                    response = send_request_with_dict(request_mgr, rq_args)
                     if response:
                         log.debug(f"response: \n{response}")
                         responses_dict[task_name].append(response)
@@ -82,6 +70,38 @@ def multi_requests_by_dicts(
                     log.error('An error occurred. {}'.format(e.args[-1]))
                 finally:
                     time.sleep(sleep_time)
+            else:
+                # check the vaild of replace_new_dict
+                if not replace_new_dict:
+                    log.error('Empty replace_new_dict while replace_old_dict is not empty')
+                else:
+                    invaild_new_key = []
+                    for key in replace_new_dict.keys():
+                        if not requests_dict[task_name]['replace_old_dict'].get(key):
+                            invaild_new_key.append(key)
+                            log.error("Invaild key[{}] in replace_new_dict to \
+                                replace with replace_old_dict[{}]".format(
+                                key, requests_dict[task_name]['replace_old_dict']
+                            ))
+                    for drop_key in invaild_new_key:
+                        replace_new_dict.pop(drop_key)
+                    # send the request with replaced params
+                    for key, news in replace_new_dict.items():
+                        progress_tot = len(news)
+                        # replace payloads with the params readed from file and send request
+                        for no, new in enumerate(news, 1):
+                            log.info(f'progress of {task_name}: {no}/{progress_tot}')
+                            try:
+                                response = send_request_with_dict(
+                                    request_mgr, rq_args, replace_new_dict={key: new}
+                                )
+                                if response:
+                                    log.debug(f"response: \n{response}")
+                                    responses_dict[task_name].append(response)
+                            except Exception as e:
+                                log.error('An error occurred. {}'.format(e.args[-1]))
+                            finally:
+                                time.sleep(sleep_time)
 
     return responses_dict
 
@@ -89,7 +109,7 @@ def multi_requests_by_dicts(
 def multi_requests_increment(
         request_mgr: RequestManager, payload_conf: str,
         day_range: list = [],
-        max_limit: int = 10, step: int = 1):
+        max_limit: int = 10, step: int = 1) -> list:
     """get mutli responses, combine their responses and
 
     Args:
@@ -112,7 +132,7 @@ def multi_requests_increment(
         records_list: list
             a list of response dicts
     """
-    request_mgr.read_payload(payload_conf, show_payload=False, day_range=day_range, no_page=False)
+    request_mgr.read_payload(payload_conf, show_payload=False, day_range=day_range)
 
     response_dict = request_mgr.send_request(
         "POST", url=request_mgr.read_url('url'),
@@ -143,43 +163,6 @@ def multi_requests_increment(
         return records_list
 
 
-def send_request_with_dict(
-        request_mgr: RequestManager, params: dict = {
-            'task_vaild': True,
-            'task_name': '',
-            'request_method': "POST",
-            'url_type': 'url',
-            'conf_name': 'query\\query_RWID.yaml',
-            'replace_word': 'RWID',
-        }, replace_word: str = ''):
-    """send a request using params in a dict"""
-    if not params.get('task_vaild', True):
-        if params.get('task_name', ''):
-            log.warning('The task[{}] is unvaild. Pass'.format(params['task_name']))
-    else:
-        if params['request_method'].upper() == 'GET':
-            return request_mgr.send_request(
-                "GET",
-                url=request_mgr.read_url(params['url_type']),
-                url_type=params['url_type'],
-                task_name=params.get('task_name', '')
-            )
-        else:
-            if replace_word and params.get('replace_word'):
-                payloads = request_mgr.payloads[
-                    params['conf_name']].replace(
-                    params['replace_word'], replace_word)
-            else:
-                payloads = request_mgr.payloads[params['conf_name']]
-            return request_mgr.send_request(
-                "POST",
-                url=request_mgr.read_url(params['url_type']),
-                request_payloads=payloads,
-                url_type=params['url_type'],
-                task_name=params.get('task_name', '')
-            )
-
-
 if __name__ == '__main__':
     request_mgr = RequestManager()
     request_mgr.read_conf('settings.yaml')
@@ -200,10 +183,30 @@ if __name__ == '__main__':
                     int(res['data']['total']))
         log.info(num_list)
 
-    if False:
+    if True:
         # test multi_requests
-        filepath = cwdPath.joinpath('res\\pro\\id_list.yaml')
-        mark_correct = conf.read_conf_from_file(cwdPath.joinpath('conf\\task\\mark_correct.yaml'))
-        log.debug(f"mark_correct: {mark_correct}")
-        responses_dict = multi_requests_by_dicts(request_mgr, mark_correct, from_file=filepath)
-        log.info('responses_dict: {}'.format(responses_dict))
+        RWID_list_str = conf.read_conf_from_file(cwdPath.joinpath('res\\pro\\id_list.yaml'))
+        RWID_dict = {'payload': {'RWID': RWID_list_str.split(" ")}}
+        log.debug(f"RWID_dict: {RWID_dict}")
+
+        if False:
+            mark_correct = conf.read_conf_from_file(cwdPath.joinpath('conf\\task\\mark_correct.yaml'))
+            log.debug(f"mark_correct: {mark_correct}")
+            responses_dict = multi_requests_by_dicts(request_mgr, mark_correct, replace_new_dict=RWID_dict)
+            log.info('responses_dict: {}'.format(responses_dict))
+
+        if True:
+            responses_data_id_list = []
+            responses_data_id_checkresult_list = []
+            query_id_list = conf.read_conf_from_file(cwdPath.joinpath('conf\\task\\query_id_list.yaml'))
+            log.debug(f"query_id_list: {query_id_list}")
+
+            responses_dict = multi_requests_by_dicts(request_mgr, query_id_list, replace_new_dict=RWID_dict)
+            log.debug('responses_dict: {}'.format(responses_dict))
+            for task_name, task_responses in responses_dict.items():
+                for response in task_responses:
+                    if task_name == 'query_id_list' and response['msg'] == '成功':
+                        responses_data_id_list.append(response['data']['records'])
+                    elif task_name == 'query_id_checkresult_list' and response['msg'] == '成功':
+                        responses_data_id_checkresult_list.append(response['data'])
+            print(responses_data_id_checkresult_list)

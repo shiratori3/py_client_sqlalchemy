@@ -25,6 +25,21 @@ from src.post.multi_requests import multi_requests_by_dicts  # noqa: E402
 from src.post.multi_requests import multi_requests_increment  # noqa: E402
 
 
+def repush_undeleted_ids(request_mgr: RequestManager, task_conf: Path) -> None:
+    rq_dicts = conf.read_conf_from_file(task_conf)
+    log.debug(f"requests_dicts: {rq_dicts}")
+    responses_list = multi_requests_by_dicts(request_mgr, rq_dicts)
+
+    res_id_list = []
+    for task_name, task_responses in responses_list.items():
+        if task_name == 'query_undelete_invaild_RWID':
+            for response in task_responses:
+                if response['msg'] == '成功':
+                    res_id_list.extend(response['data']['records'])
+    id_list = [res['id'] for res in res_id_list]
+    log.info(f"len of id_list: {len(id_list)}")
+
+
 def change_pools(request_mgr: RequestManager, task_conf: Path) -> None:
     """change pools according to payload_confs in task_conf"""
     rq_dicts = conf.read_conf_from_file(task_conf, encoding='utf-8')
@@ -86,7 +101,7 @@ def requests_to_excel(request_mgr: RequestManager, task_conf: Path, day_range: L
         request_mgr: RequestParams
             a RequestParams instance
         task_conf: Path
-            the path of conf for multi_requests_by_dicts
+            the path of conf for multi_requests_increment
         day_range: list, default []
             a list of two int to pass to request_mgr.read_payload
 
@@ -161,4 +176,11 @@ if __name__ == '__main__':
             request_mgr,
             cwdPath.joinpath('conf\\task\\excel_autofill_sample.yaml'),
             day_range=[-7, 0]
+        )
+
+    if False:
+        # test repush_undeleted_ids
+        repush_undeleted_ids(
+            request_mgr,
+            cwdPath.joinpath('conf\\task\\repush_undeleted_id.yaml')
         )

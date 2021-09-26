@@ -16,16 +16,13 @@ sys.path.append(str(cwdPath))
 from src.manager.LogManager import logmgr  # noqa: E402
 log = logmgr.get_logger(__name__)
 
-from functools import wraps, partial
+from functools import wraps
 
 
-def request_task_msgs(func, *, url_type: str = 'url', task_name: str = ''):
+def request_task_msgs(func):
     """A decorator to output additional msgs of request tasks"""
-    if func is None:
-        return partial(request_task_msgs, url_type=url_type, task_name=task_name)
-
     @wraps(func)
-    def wrapper(self, *args, url_type=url_type, task_name=task_name, **kwargs):
+    def wrapper(self, *args, url_type: str = 'url', task_name: str = '', **kwargs):
         response = func(self, *args, **kwargs)
         if response and isinstance(response, dict) and task_name:
             if url_type == 'url':
