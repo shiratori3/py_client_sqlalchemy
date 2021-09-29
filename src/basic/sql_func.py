@@ -122,7 +122,7 @@ if __name__ == '__main__':
     # testing sql_read
     manager.set_engine('164', future=True)
     engine_164 = manager.get_engine('164')
-    sql = sql_read(cwdPath.joinpath('res\\dev\\test_year.txt'))
+    sql = sql_read(cwdPath.joinpath('res\\dev\\sqlscript\\test_year.txt'))
     outfile = 'D:\\test.xlsx'
     sql_result = sql_query(
         engine_164, sql=sql, sql_db_switch='USE JYFIN', return_df=False, to_file=outfile)

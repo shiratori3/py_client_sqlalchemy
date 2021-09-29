@@ -1,0 +1,18 @@
+cookie:
+  gsid: eaae2a0ae6394730a6a4c97c119a2348
+  token: 40a23524-06b6-4d80-a33f-071a22b80dba
+page:
+  size: 500
+url:
+  url: https://{host}{port}/zbApi/itemSubject/query?_time={timestamp}
+  urlgetSql: https://{host}{port}/zbApi/taskPoolChange/getSql?_time={timestamp}
+  urlChange: https://{host}{port}/zbApi/taskPoolChange/change?_time={timestamp}
+headers:
+  sec-ch-ua: '"Chromium";v="92", " Not A;Brand";v="99", "Google Chrome";v="92"'
+  Accept: '*/*'
+  sec-ch-ua-mobile: "?0"
+  Content-Type: application/json;charset=UTF-8
+  User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36
+  Sec-Fetch-Site: same-origin
+  Sec-Fetch-Mode: cors
+  Sec-Fetch-Dest: empty

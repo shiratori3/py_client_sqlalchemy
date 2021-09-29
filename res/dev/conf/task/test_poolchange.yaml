@@ -1,0 +1,7 @@
+poolchange_uncheck_test:
+    task_vaild: False
+    task_name: 切换池子-测试
+    request_method: POST
+    url_type: urlChange
+    conf_name: post\poolchange\test_poolchange_uncheck.yaml
+

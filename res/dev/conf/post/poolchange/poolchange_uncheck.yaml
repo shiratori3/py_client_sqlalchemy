@@ -1,0 +1,16 @@
+payload:
+  targetTaskPool: 1363733302653095937
+  taskType: 1
+  sourceTaskPool: 3
+  singleAuditFlag: false
+  status: [4]
+  paramList: ["enable_type=0","suspension=0"]
+  igsdmList: []
+  itemName: ""
+  subjectIds: []
+  formYear: ""
+  endDate: ""
+  isHistoryChange: null
+  isInsideAudit: null
+  isSpecialHandle: null
+  isAccepted: null

@@ -1,0 +1,37 @@
+query_id_list:
+    task_vaild: True
+    task_name: query_id_list
+    request_method: POST
+    url_type: url
+    conf_name: post\query\query_RWID.yaml
+    excel_fpath: D:\查询_RWID_{date}.xlsx
+    col_list_to_capture:
+      - id
+      - fileName
+      - subjectName
+      - enableTypeName
+      - status
+    base_to_replace:
+      payload:
+        id: RWID
+query_id_checkresult_list:
+    task_vaild: True
+    task_name: post\query_id_checkresult_list
+    request_method: GET
+    url_type: urlCheckResult
+    excel_fpath: D:\查询_RWID校验信息_{date}.xlsx
+    base_to_replace:
+      url:
+        itemSubjectId: RWID
+query_file_of_unvaild_id_list:
+    task_vaild: True
+    task_name: query_file_of_unvaild_id_list
+    request_method: POST
+    url_type: url
+    conf_name: post\query\query_fileName.yaml
+    excel_fpath: D:\查询_失效ID公告全量记录_{date}.xlsx
+    excel_fpath_filtered: D:\查询_失效ID公告全量记录_筛选_{date}.xlsx
+    payloads_encode: utf-8
+    base_to_replace: 
+      payload:
+        fileName: 公告名称
