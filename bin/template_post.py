@@ -3,7 +3,7 @@
 '''
 @File    :   template.py
 @Author  :   Billy Zhou
-@Time    :   2021/09/18
+@Time    :   2021/09/29
 @Desc    :   None
 '''
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # 实际执行区域
     if True:
         # 初始化
-        request_mgr = RequestManager()
+        request_mgr = RequestManager(cwdPath.joinpath('res\\dev\\conf'))
         request_mgr.read_conf('settings.yaml')
 
         if to_count:
@@ -77,12 +77,12 @@ if __name__ == '__main__':
             if query_test_all:
                 uncheck_nums = get_nums(
                     request_mgr,
-                    cwdPath.joinpath('res\\dev\\test_sample_count.yaml')
+                    cwdPath.joinpath('res\\dev\\task\\test_count.yaml')
                 )
                 log.info('unchecked: all: {}, push: {}'.format(uncheck_nums[0], uncheck_nums[1]))
                 if insert_to_db and engine_mysql:
                     if uncheck_nums[0] is not False and uncheck_nums[1] is not False:
-                        sql = 'INSERT INTO count_uncheck(`time_create`, `all`, `pushed`) VALUES (:t, :all, :pushed)'
+                        sql = 'INSERT INTO count_uncheck_test(`time_create`, `all`, `pushed`) VALUES (:t, :all, :pushed)'
                         bparams = {
                             't': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                             'all': uncheck_nums[0],
@@ -95,7 +95,7 @@ if __name__ == '__main__':
             # 切换池子-测试
             change_pools(
                 request_mgr,
-                cwdPath.joinpath('res\\dev\\test_sample_poolchange.yaml')
+                cwdPath.joinpath('res\\dev\\task\\test_poolchange.yaml')
             )
 
         time.sleep(10) if to_change else time.sleep(1)
@@ -103,6 +103,6 @@ if __name__ == '__main__':
             # 导出至excel
             requests_to_excel(
                 request_mgr,
-                cwdPath.joinpath('res\\dev\\test_sample_excel.yaml'),
+                cwdPath.joinpath('res\\dev\\task\\test_excel_uncheck.yaml'),
                 day_range=[s_range, e_range]
             )

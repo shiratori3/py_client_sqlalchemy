@@ -1,0 +1,8 @@
+mark_correct:
+    task_vaild: True
+    request_method: POST
+    url_type: urlmarkCorrect
+    conf_name: post\mark\mark_correct.yaml
+    base_to_replace:
+      payload:
+        itemSubjectId: RWID

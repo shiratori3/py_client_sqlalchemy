@@ -1,0 +1,12 @@
+query_uncheck_all:
+    task_vaild: True
+    task_name: query_uncheck_all
+    request_method: POST
+    url_type: url
+    conf_name: post\query\query_uncheck_all.yaml
+query_uncheck_pushed:
+    task_vaild: True
+    task_name: query_uncheck_pushed
+    request_method: POST
+    url_type: url
+    conf_name: post\query\query_uncheck_pushed.yaml

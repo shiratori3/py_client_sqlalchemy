@@ -3,7 +3,7 @@
 '''
 @File    :   EngineManager.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/09/29
 @Desc    :   None
 '''
 
@@ -93,7 +93,7 @@ class EngineManager(object):
                 conf_dict = self.cmgr_ui.run('READ', conn_name)
                 if conf_dict:
                     if 'pyodbc' in conf_dict['sqlalchemy.url']:
-                        # depend your native version
+                        # depend on your native version
                         conf_dict['sqlalchemy.url'] += '?driver=SQL+Server+Native+Client+11.0'
 
                     # add kwargs to conf_dict
@@ -107,6 +107,17 @@ class EngineManager(object):
                 failed = True
             except Exception as e:
                 log.error("An error occurred. {!r}".format(e.args[-1]))
+                if conf_dict:
+                    if 'pyodbc' in conf_dict['sqlalchemy.url']:
+                        # depend on your native version
+                        log.error("failed to connect with driver SQL+Server+Native+Client+11.0")
+                        log.error("try to connect with driver SQL+Server+Native+Client+10.0")
+                        conf_dict['sqlalchemy.url'] = conf_dict['sqlalchemy.url'].replace(
+                            '?driver=SQL+Server+Native+Client+11.0',
+                            '?driver=SQL+Server+Native+Client+10.0'
+                        )
+                        self._engine_dict[conn_name] = engine_from_config(conf_dict, prefix='sqlalchemy.')
+                        self.test_engine(self._engine_dict[conn_name])
             finally:
                 if try_time > try_max:
                     log.error('Login failed too much time. Stop trying.')

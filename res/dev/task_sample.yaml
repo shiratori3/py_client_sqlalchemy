@@ -1,0 +1,50 @@
+task_name:
+    # required settings
+    task_vaild: False
+    request_method: POST
+    url_type: url  # the key for RequestManager to read url in RequestManager.url_dict
+    # optional settings
+    conf_name: post\excel\excel_test_sample.yaml # the relative path for RequestManager.read_payload()
+    payloads_encode: utf-8 # the encode for RequestManager.read_payload()
+    task_name: excel_test_conf  # the name of task, used for request_task_msgs to output msgs
+    max_loop: 100  # the maximum page num to get mutli responses
+    base_to_replace:
+      payload:
+        id: RWID
+    # for payload, it means the structure of payload dict to replace
+    # this example is to replace the value in conf_dict['payload']['id']
+    # Caution: make sure the value to replace is not Mapping
+      url:
+        itemSubjectId: RWID
+    # for url, it means the key params to pass by RequestManager.read_url()
+    # this example is to pass the key params, itemSubjectId='RWID', to RequestManager.read_url()
+    col_list_to_capture:  # a list of colname to filter the converted dataframe
+      - colname1
+      - colname2
+    row_in_col_to_capture:
+      colname1:
+        - rowvalue1
+        - rowvalue2
+        - '%rowstring1%'
+        - ''
+    row_in_col_to_discard:
+      colname1:
+        - rowvalue1
+        - rowvalue2
+        - '%rowstring1%'
+        - ''
+    # dicts to filter rows in cols from the dataframe.
+    # diff cols will be combined by operator.or_
+    # a filter of string cols like '%row_string%' is accepted.
+    # For example,
+    #     {'id': ['1111', '2222']} will include/exclude both of value '1111' and '2222' in col named 'id'
+    #     {'id': ['%11%']} will include/exclude the string contains '11' in col named 'id'
+    #     {'id': ['']} will include/exclude the empty string in col named 'id'
+    sample_num: 1000
+    # int or float, return a sample dataframe with sample_num rows as the final result.
+    # int meanings a max num, float meanings a percent
+    timestamp_to_datetime:
+      lastModifiedDate: ms
+    # a dict to convert timestamp data in cols in the converted dataframe
+    # For example, {'lastModifiedDate': 'ms'} will convert the timestamps in col named 'lastModifiedDate' with pd.to_datetime(unit='ms')
+    excel_fpath: D:\excel_test_{date}.xlsx  # the abs path of output excel file, {date} is to format

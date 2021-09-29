@@ -1,0 +1,22 @@
+excel_uncheck:
+    task_vaild: True
+    task_name: excel_uncheck
+    request_method: POST
+    url_type: url
+    conf_name: post\excel\excel_uncheck.yaml
+    max_loop: 100
+    excel_fpath: D:\excel_uncheck_{date}.xlsx
+    col_list_to_capture:
+      - id
+      - formYear
+      - status
+      - auditProcessName
+      - fileName
+      - subjectName
+      - taskPoolName
+      - enableTypeName
+      - suspensionName
+    base_to_replace:
+      payload:
+        page:
+          current: 1

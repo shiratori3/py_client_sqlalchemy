@@ -3,7 +3,7 @@
 '''
 @File    :   RequestParams.py
 @Author  :   Billy Zhou
-@Time    :   2021/09/22
+@Time    :   2021/09/29
 @Desc    :   None
 '''
 
@@ -18,70 +18,59 @@ log = logmgr.get_logger(__name__)
 
 import json
 import time
-import inspect
 import datetime
 import requests
-from typing import Dict, Any
-from src.manager.main import conf  # noqa: E402
 from functools import wraps
-from src.basic.compare import dict_compare  # noqa: E402
-from src.post.task_msgs import request_task_msgs  # noqa: E402
+from src.manager.main import conf  # noqa: E402
 
 
 def send_request_with_dict(func):
     """A decorator to send a request using params in a dict"""
     @wraps(func)
-    def wrapper(self, *args, params_dict: dict = {}, replace_new_dict: Dict[str, Any] = {}, **kwargs):
-        if not params_dict:
+    def wrapper(*args, task_dict: dict = {}, **kwargs):
+        if not task_dict:
             return func(*args, **kwargs)
         else:
-            if not params_dict.get('task_vaild', True):
-                log.warning('The task[{}] is unvaild. Pass'.format(params_dict.get('task_name', '')))
-            else:
+            try:
                 # check the vaild of request_method
-                if params_dict['request_method'].upper() not in ['POST', 'GET']:
-                    raise ValueError('Invaild request_method[{}] in task[].'.format(
-                        params_dict['request_method']))
+                if task_dict['request_method'].upper() not in ['POST', 'GET']:
+                    raise ValueError('Invaild request_method[{}] in task_dict[{}].'.format(
+                        task_dict['request_method'], task_dict))
 
-                # check the vaild of replace_new_dict
-                if replace_new_dict and params_dict.get('replace_old_dict'):
-                    old_compared = dict_compare(
-                        params_dict['replace_old_dict'], replace_new_dict,
-                        miss_checkmode='ADD', diff_checkmode='IGNORE')
-                    if old_compared != params_dict['replace_old_dict']:
-                        for key in old_compared.keys():
-                            if not params_dict['replace_old_dict'].get(key):
-                                invaild_new_key.append(key)
-                                log.error("Invaild key[{}] in replace_new_dict to \
-                                    replace with replace_old_dict[{}]".format(
-                                    key, params_dict['replace_old_dict']
-                                ))
-                    invaild_new_key = []
-                    for key in replace_new_dict.keys():
-                    for drop_key in invaild_new_key:
-                        replace_new_dict.pop(drop_key)
-
-                # use the params with params_dict
-                url = request_mgr.read_url(params_dict['url_type'])
-                payloads = request_mgr.payloads[params_dict['conf_name']]
-                # replace the params with replace_new_dict
-                if params_dict['request_method'].upper() == 'GET':
-                    if replace_new_dict and params_dict.get('replace_old_dict'):
-                        url = request_mgr.read_url(
-                            params_dict['url_type'], **replace_new_dict)
+                if task_dict['request_method'].upper() == 'GET':
+                    return func(
+                        *args, request_method=task_dict['request_method'],
+                        request_url=task_dict['request_url'],
+                        url_type=task_dict['url_type'],
+                        task_name=task_dict.get('task_name', ''), **kwargs)
                 else:
-                    if replace_new_dict and params_dict.get('replace_old_dict'):
-                        for key, new in replace_new_dict.items():
-                            payloads = payloads.replace(
-                                params_dict['replace_old_dict'][key], new)
-                    if params_dict.get('payloads_encode'):
-                        payloads = payloads.encode(params_dict['payloads_encode'])
-            return func(
-                *args, request_method=params_dict['request_method'],
-                url=url,
-                request_payloads=payloads,
-                url_type=params_dict['url_type'],
-                task_name=params_dict.get('task_name', ''))
+                    return func(
+                        *args, request_method=task_dict['request_method'],
+                        request_url=task_dict['request_url'],
+                        request_payloads=task_dict['request_payloads'],
+                        url_type=task_dict['url_type'],
+                        task_name=task_dict.get('task_name', ''),
+                        payloads_encode=task_dict.get('payloads_encode', ''), **kwargs)
+            except Exception as e:
+                log.error('An error occurred. {!r}'.format(e.args[-1]))
+                log.error(f'Failed to send request with a task_dict. The task_dict is: \n{task_dict}')
+    return wrapper
+
+
+def request_task_msgs(func):
+    """A decorator to output additional msgs of request tasks"""
+    @wraps(func)
+    def wrapper(self, *args, url_type: str = '', task_name: str = '', **kwargs):
+        response = func(self, *args, **kwargs)
+        if response and isinstance(response, dict) and task_name:
+            if url_type == 'urlChange':
+                log.info(f"{task_name} 切换成功")
+            elif url_type == 'urlgetSql':
+                log.info(f"{task_name} 执行成功")
+                log.info("{} 总量: {}".format(task_name, response['data']['count']))
+                log.info("{} 涉及公告数: {}".format(task_name, response['data']['influenceItemCount']))
+                log.info("{} 涉及科目数: {}".format(task_name, response['data']['influenceSubjectCount']))
+        return response
     return wrapper
 
 
@@ -90,52 +79,60 @@ class RequestManager(object):
 
     Attrs:
     -----
-        conf_path: Path, default cwdPath.joinpath('conf/post')
-            the directory of conf files
-        conf_fname: str
-            the filename of conf file
+        conf_path: Path, default cwdPath.joinpath('conf')
+            the directory of conf file
+        _conf_file: Path, default cwdPath.joinpath('conf').joinpath(conf_fname)
+            the path of conf file
+        page_size: int
+            the num of conf_dict['page']['size'] readed from _conf_file
         url_dict: dict
-            conf_dict['url'] readed from conf_path.joinpath(conf_fname)
+            conf_dict['url'] readed from _conf_file
         headers: dict
-            conf_dict['headers'] read from conf_path.joinpath(conf_fname)
+            conf_dict['headers'] read from _conf_file
             updated with conf_dict['cookie']['gsid'] and conf_dict['cookie']['token']
         payloads: dict
-            the dict saving payload_dict readed from conf_path.joinpath(payload_conf_fname)
+            the dict saving payload_dict readed from conf_path.joinpath(conf_fpath)
 
     Methods:
     -------
-        read_conf(self, conf_fname: str) -> None:
-            read from conf_path.joinpath(conf_fname) and update headers
+        read_conf(
+                self, conf_fname: str,
+                conf_path: Path = cwdPath.joinpath('conf'), encoding: str = ''
+            ) -> None:
+            read from conf_path.joinpath(conf_fname) to update self.url_dict, self.headers, self.page_size
         read_url(self, url_type: str, **params) -> str:
             read url in self.url_dict and format with timestamp
         read_payload(
-                self, payload_conf_fname: str,
-                show_payload: bool = False, day_range: list = []
+                self, conf_fpath: str,
+                base_path: Path = '', encoding: str = '', day_range: list = []
             ) -> dict:
-            read payload from conf_path.joinpath(payload_conf_fname) and update params in payload
+            read payload from base_path.joinpath(conf_fpath) and update params in payload
         send_request(
-                self, request_method: str, url: str,
-                request_payloads: str = '', request_headers: str = ''
+                self, request_method: str, request_url: str,
+                request_headers: str = '', request_payloads: dict = {},
+                json_encoding: str = ''
             ) -> dict or requests.Response:
             send a request and return response
     """
-    def __init__(self, conf_path: Path = cwdPath.joinpath('conf/post')):
-        self.conf_path = Path(conf_path)
+    def __init__(self, conf_path: Path = cwdPath.joinpath('conf')):
+        self.conf_path = conf_path
 
         self.url_dict = {}
         self.headers = {}
         self.payloads = {}
 
-    def read_conf(self, conf_fname: str) -> None:
-        """read from conf_path.joinpath(conf_fname) and update headers"""
-        conf_dict = conf.read_conf_from_file(self.conf_path.joinpath(conf_fname))
-        log.debug("conf_dict: %s", conf_dict)
+    def read_conf(self, conf_fname: str, conf_path: Path = cwdPath.joinpath('conf'), encoding: str = '') -> None:
+        """read from conf_path.joinpath(conf_fname) to update self.url_dict, self.headers, self.page_size"""
+
+        self._conf_file = Path(conf_path).joinpath(conf_fname)
+        conf_dict = conf.read_conf_from_file(self._conf_file, encoding=encoding)
+        log.debug(f"conf_dict: \n{conf_dict}")
 
         # update url_dict
         self.url_dict = conf_dict['url']
 
         # update size
-        self.page_size = conf_dict['page']['size']
+        self.page_size = int(conf_dict['page']['size'])
 
         # update headers
         conf_dict['headers']['gsid'] = conf_dict['cookie']['gsid']
@@ -143,122 +140,66 @@ class RequestManager(object):
         self.headers = conf_dict['headers']
 
     def read_url(self, url_type: str, **params) -> str:
-        """read url in self.url_dict and format with timestamp"""
+        """read url in self.url_dict and format with timestamp and **params"""
         log.debug(f'url_dict: {self.url_dict}')
         if self.url_dict.get(url_type):
             return self.url_dict[url_type].format(timestamp=int(round(time.time() * 1000)), **params)
         else:
-            log.error("Unvaild url_type. Return blank url.")
+            log.error("Unvaild url_type. Return blank string.")
             return ''
 
     def read_payload(
-            self, payload_conf_fname: str,
-            show_payload: bool = False, read_encoding: str = '',
-            day_range: list = []) -> None:
-        """read payload from conf_path.joinpath(payload_conf_fname) and update params in payload
+            self, conf_fpath: str, day_range: list = [],
+            base_path: Path = '', encoding: str = '', use_history: bool = True) -> dict:
+        """read payload from base_path.joinpath(conf_fpath) and update params in payload
 
         Args:
-            payload_conf_fname: str
-                the filename of payload conf to read
-            show_payload: bool, default False
-                show payload readed for debug
+        ----
+            conf_fpath: str
+                the relative filepath of payload conf file to read
             day_range: list, default []
-                a list of two datetime str to update the 'lastModifiedDateRange' param in payload
+                a list of two int to update the 'lastModifiedDateRange' param in payload
 
-                For example, ["2021-08-22T00:00:00.000Z", "2021-08-23T00:00:00.000Z"]
+                For example, [-1, 0] meanings the date range between 1 day before and today.
+                it will create the output ["2021-08-22T16:00:00.000Z", "2021-08-23T16:00:00.000Z"]
+            base_path: Path = ''
+                the base directory to read conf file, if unprovide, use self.base_path
+            encoding: str, default ''
+                the encode for reading the conffile
+            use_history: bool, default True
+                if conf_fpath in self.payloads, return self.payloads[conf_fpath] when True
+        Return:
+            self.conf_dict['payload']: dict
         """
-        if self.payloads.get(payload_conf_fname):
-            return self.payloads[payload_conf_fname]
+        if self.payloads.get(conf_fpath) and use_history:
+            log.warning(f'{conf_fpath} already readed. Use the one in payloads')
+            return self.payloads[conf_fpath]
         else:
-            if read_encoding:
-                self._payload_conf_dict = conf.read_conf_from_file(
-                    self.conf_path.joinpath(payload_conf_fname), encoding=read_encoding)
-            else:
-                self._payload_conf_dict = conf.read_conf_from_file(
-                    self.conf_path.joinpath(payload_conf_fname))
+            base_path = Path(base_path) if base_path else self.conf_path
+            conf_dict = conf.read_conf_from_file(
+                base_path.joinpath(conf_fpath), encoding=encoding)
+            log.debug(f'conf_dict readed: {conf_dict}')
 
-            # update page size
-            if self._payload_conf_dict['payload'].get('page', None) is not None:
-                if isinstance(self._payload_conf_dict['payload']['page'].get('size', None), int):
-                    if self.page_size > self._payload_conf_dict['payload']['page']['size']:
-                        self._payload_conf_dict['payload']['page']['size'] = self.page_size
+            # change params in conf_dict
+            self._update_payload_params(
+                conf_dict['payload'], page_size=self.page_size, day_range=day_range)
+            log.debug(f'conf_dict updated: {conf_dict}')
 
-            # change params in conf
-            self._update_payload_params(day_range=day_range)
+            # add to self.payloads
+            self.payloads[conf_fpath] = conf_dict['payload']
+            return conf_dict['payload']
 
-            if show_payload:
-                log.info(f"payload: {json.dumps(self._payload_conf_dict['payload'])}")
-
-            # add to dict of payloads
-            self.payloads[payload_conf_fname] = self._payload_conf_dict['payload']
-            return self._payload_conf_dict['payload']
-
-    @request_task_msgs
-    @send_request_with_dict
-    def send_request(
-            self, request_method: str, url: str,
-            request_payloads: str = '', request_headers: str = '') -> dict or requests.Response:
-        """send a request and return response
-
-        send a request and return response.
-        if response code not equal to 200, output the info of params for debug.
-
-        Args:
-            request_method: str
-                the method to send request, must in ['POST', 'GET']
-            url: str
-                the url to send a request and get response
-            request_payloads: dict, default ''
-            request_headers: str, default ''
-                the payload and header used to create request instead of those in RequestParams
-
-        Returns:
-            a dict of json type or requests.Response if response.json() failed
-        """
-        if request_method.upper() not in ['POST', 'GET']:
-            raise ValueError('Invaild request_method[{}]. Please input POST or GET.'.format(request_method))
-
-        headers = request_headers if request_headers else self.headers
-        if request_payloads:
-            response = requests.request(
-                request_method,
-                url=url,
-                headers=headers,
-                data=json.dumps(request_payloads)
-            )
-        else:
-            response = requests.request(
-                request_method,
-                url=url,
-                headers=headers
-            )
-
-        log.debug("response.text: %s", response.text)
-        try:
-            response_jsondict = response.json()
-            log.debug("response_msg: %s", response_jsondict['msg'])
-            if response_jsondict['code'] != 200:
-                log.error("request failed.")
-                log.warning(f"request_method: {request_method}")
-                log.warning("response.text[:1000]: %s", response.text[:1000])
-                log.warning(f"url: {url}", )
-                log.warning("headers: {}".format(headers))
-                log.warning("payload: {}".format(request_payloads))
-            else:
-                return response_jsondict
-        except Exception:
-            log.error('The response body does not contain valid json. Return requests.Response')
-            log.error(f"request_method: {request_method}")
-            log.error("response.text[:1000]: %s", response.text[:1000])
-            log.error(f"url: {url}", )
-            log.error("headers: {}".format(headers))
-            log.error("payload: {}".format(request_payloads))
-            return response
-
-    def _update_payload_params(self, day_range: list = []) -> None:
-        """update the params in readed payload"""
-        if day_range:
-            if self._payload_conf_dict['payload'].get('lastModifiedDateRange', None) is not None:
+    def _update_payload_params(self, payload: dict, page_size: int = '', day_range: list = []) -> None:
+        """update the params in payload"""
+        # change page size in conf_dict
+        if payload.get('page', None) is not None:
+            if page_size:
+                if isinstance(payload['page'].get('size', None), int):
+                    if page_size > payload['page']['size']:
+                        payload['page']['size'] = page_size
+        # change lastModifiedDateRange in conf_dict
+        if payload.get('lastModifiedDateRange', None) is not None:
+            if day_range:
                 log.debug("datetime.datetime.utcnow(): %s", datetime.datetime.utcnow())
                 utc_now = datetime.datetime.utcnow()
                 if len(day_range) == 1:
@@ -273,13 +214,76 @@ class RequestManager(object):
                 e_date = utc_now + e_delta
                 log.debug("s_date: %s", s_date.strftime('%Y-%m-%d') + 'T16:00:00.000Z')
                 log.debug("e_date: %s", e_date.strftime('%Y-%m-%d') + 'T16:00:00.000Z')
-                self._payload_conf_dict['payload']['lastModifiedDateRange'] = [
+                payload['lastModifiedDateRange'] = [
                     s_date.strftime('%Y-%m-%d') + 'T16:00:00.000Z',
                     e_date.strftime('%Y-%m-%d') + 'T16:00:00.000Z',
                 ]
-                log.info("lastModifiedDateRange: %s", self._payload_conf_dict['payload']['lastModifiedDateRange'])
+                log.info("lastModifiedDateRange: %s", payload['lastModifiedDateRange'])
+
+    @send_request_with_dict
+    @request_task_msgs
+    def send_request(
+            self, request_method: str, request_url: str,
+            request_headers: str = '', request_payloads: dict = {},
+            payloads_encode: str = '') -> dict or requests.Response:
+        """send a request and return response
+
+        send a request and return response.
+        if response code not equal to 200, output the info of params for debug.
+
+        Args:
+            request_method: str
+                the method to send request, must in ['POST', 'GET']
+            request_url: str
+                the url to send a request and get response
+            request_headers: str, default ''
+            request_payloads: dict, default {}
+                the payload and header used to create request instead of those in RequestParams
+
+        Returns:
+            a dict of json type. if response.json() failed, requests.Response
+        """
+        if request_method.upper() not in ['POST', 'GET']:
+            raise ValueError(f'Invaild request_method[{request_method}]. Please input POST or GET.')
+
+        headers = request_headers if request_headers else self.headers
+        if request_payloads:
+            payloads = json.dumps(request_payloads) if not payloads_encode else json.dumps(
+                request_payloads).encode(payloads_encode)
+            response = requests.request(
+                request_method,
+                url=request_url,
+                headers=headers,
+                data=payloads
+            )
+        else:
+            response = requests.request(
+                request_method,
+                url=request_url,
+                headers=headers
+            )
+
+        log.debug("response.text: %s", response.text)
+        try:
+            response_jsondict = response.json()
+            log.debug("response_msg: %s", response_jsondict['msg'])
+            if response_jsondict['code'] != 200:
+                log.error("request failed.")
+                log.warning(f"request_method: {request_method}")
+                log.warning(f"url: {request_url}")
+                log.warning(f"headers: {headers}")
+                log.warning(f"payload: {payloads}")
+                log.warning(f"response.text[:1000]: {response.text[:1000]}")
             else:
-                log.warning('No lastModifiedDateRange in payload. Invaild day_range.')
+                return response_jsondict
+        except Exception:
+            log.error('The response body does not contain valid json. Returning requests.Response')
+            log.error(f"request_method: {request_method}")
+            log.error(f"url: {request_url}")
+            log.error(f"headers: {headers}")
+            log.error(f"payload: {payloads}")
+            log.error(f"response.text[:1000]: {response.text[:1000]}")
+            return response
 
 
 if __name__ == '__main__':
@@ -293,18 +297,18 @@ if __name__ == '__main__':
 
     if True:
         # test payload
-        # payload = request_mgr.read_payload('excel\\excel_uncheck.yaml', show_payload=True)
-        payload = request_mgr.read_payload('excel\\excel_check_tan_latest.yaml', show_payload=False, day_range=[-1, 0])
-        # request_mgr.read_payload('poolchange\\poolchange_juno_error_inner.yaml', show_payload=False, no_page=True)
-        log.info(f"payload: \n{json.dumps(payload)}")
+        payload1 = request_mgr.read_payload('post\\excel\\excel_uncheck.yaml')
+        payload2 = request_mgr.read_payload('post\\excel\\excel_check_tan_latest.yaml', day_range=[-1, 0])
+        payload3 = request_mgr.read_payload('post\\poolchange\\poolchange_juno_error_inner.yaml')
+        log.info(f"payload1: \n{json.dumps(payload1)}")
         log.info(f"payloads: \n{request_mgr.payloads}")
 
     if True:
         # test send_request
         response = request_mgr.send_request(
             "POST",
-            url=request_mgr.read_url('url'),
-            request_payloads=payload
+            request_url=request_mgr.read_url('url'),
+            request_payloads=payload1
         )
         if response.get('code', None) is not None:
             log.info(f"code of response: {response['code']}")
@@ -313,4 +317,4 @@ if __name__ == '__main__':
                 if response.get('total', None) is not None:
                     log.info(f"total of response: {response['data']['total']}")
         else:
-            log.error('Failure requests')
+            log.error('Failure request')

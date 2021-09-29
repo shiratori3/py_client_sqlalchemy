@@ -5,7 +5,6 @@
 /conf/
 /conf/rsa/
 /conf/conn/
-*.yaml
 /log/
 *.log
 /res/pro/
@@ -15,5 +14,4 @@
 !template_post.py
 !res/dev/*.yaml
 /rsa/
-d:\pycharm\py_sql_client\conf\conn
 D:\pycharm\py_sql_client\conf\conn
