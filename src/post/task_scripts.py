@@ -45,7 +45,7 @@ def mark_id_correct(request_mgr: RequestManager, id_list_conf: Path, task_conf: 
         replaces_dict=RWID_dict,
         sleep_time=0.1
     )
-    result_false = [{task_name: response} for task_name, responses in result.items() for response in responses if response['code'] != '200']
+    result_false = [{task_name: response} for task_name, responses in result.items() for response in responses if int(response['code']) != 200]
     log.info(f'false result of mark_id_correct: {result_false}')
 
 

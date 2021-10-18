@@ -16,6 +16,7 @@ sys.path.append("D:\pycharm\py_sql_client")  # change the path to your workspace
 from src.manager.EngineManager import EngineManager
 from src.basic.sql_func import sql_read
 from src.basic.sql_func import sql_query
+from src.basic.sql_func import sql_result_output
 
 if __name__ == '__main__':
     manager = EngineManager()

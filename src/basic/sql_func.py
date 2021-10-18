@@ -16,7 +16,10 @@ sys.path.append(str(cwdPath))
 from src.manager.LogManager import logmgr
 log = logmgr.get_logger(__name__)
 
+import time
+import datetime
 import pandas as pd
+from IPython.display import display
 from sqlalchemy import text
 from sqlalchemy import bindparam
 from sqlalchemy.engine import Engine
@@ -35,6 +38,71 @@ def sql_read(script_file: Path or str, encoding='utf8'):
         return sql
     except Exception as e:
         log.error("An error occurred. {}".format(e.args[-1]))
+
+
+def sql_result_output(
+        engine: Engine, sql: str, sql_db_switch: str = '',
+        distinct_result: bool = False, show_max_row: int = 30,
+        overflow_to_file: bool = True, overflow_filepath: Path = '',
+        show_runtime: bool = True, df_styler: bool = True):
+    """execute a sql query to engine
+
+    Args:
+        engine: sqlalchemy.engine.Engine
+            a instance of sqlalchemy.engine.Engine
+        sql: str
+            the sql script to query
+        sql_db_switch: str, default ''
+            a simple sql script to swtich using db, such as 'USE information_schema' for MySQL
+        distinct_result: bool, default False
+            whether to drop duplicate rows in result
+        show_max_row: int, default 30
+            the max num of row to output
+        overflow_to_file: bool, default True
+            whether to out the overflow result to file
+        show_runtime: bool, default True
+            whether to the run time of sql
+        df_styler: bool, default True
+            whether to use the styler to output the df result.
+            if styler is used, the result will not be recored in log files.
+    """
+    log.info("Start to run sql. Waiting for result......")
+    s_time = time.time()
+    sql_result = sql_query(engine, sql, sql_db_switch=sql_db_switch, return_df=True)
+    e_time = time.time()
+    if show_runtime:
+        log.info("run_time: {:.2f}s".format(e_time - s_time))
+
+    # output the info of result
+    if sql_result.empty:
+        log.warning("SQL查询结果为空，请检查语句或输入参数。")
+    else:
+        log.info("row_num:  {!r}".format(sql_result.shape[0]))
+        if distinct_result:
+            sql_result = sql_result.drop_duplicates()
+            log.info("distinct row_num:  {!r}".format(sql_result.shape[0]))
+        # output the result
+        if df_styler:
+            display(sql_result.head(show_max_row).style.set_properties(**{'text-align': 'left'}))
+        else:
+            log.info("sql_result.head({0}): \n{1!r}".format(
+                show_max_row, sql_result.head(show_max_row)))
+        if sql_result.shape[0] > show_max_row:
+            log.warning(f"SQL查询结果条数较多，未能全部显示，仅展示前{show_max_row}条")
+            if overflow_to_file:
+                overflow_filepath = cwdPath.joinpath('bin') \
+                    if not overflow_filepath else Path(overflow_filepath)
+                if overflow_filepath.exists():
+                    overflow_filepath = str(overflow_filepath.joinpath(
+                        "sql_{timestamp}.xlsx".format(
+                            timestamp=datetime.datetime.now().strftime("%m%d%H%M%S%f")
+                        )))
+                    log.info(f'overflow result is output to file[{overflow_filepath}]')
+                    df_to_file(sql_result, overflow_filepath)
+                else:
+                    log.error("invaild path[{}] to output the overflow sql result".format(
+                        overflow_filepath))
+        log.info("Result output end.")
 
 
 def sql_query(
