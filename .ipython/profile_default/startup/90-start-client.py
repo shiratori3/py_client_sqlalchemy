@@ -4,14 +4,26 @@
 '''
 @File    :   90-start-client.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/11/02
 @Desc    :   None
 '''
 
 
 import sys
+import yaml
 from pathlib import Path
-sys.path.append("D:\pycharm\py_sql_client")  # change the path to your workspace root
+with open(Path(__file__).parent.joinpath('settings.yaml'), 'r', encoding='utf-8') as configfile:
+    data = yaml.load(configfile, Loader=yaml.Loader)
+if 'path_to_add' in data.keys():
+    for path_to_add in data['path_to_add']:
+        sys.path.append(path_to_add)  # add the path to your workspace root
+
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+
+pd.options.display.max_columns = 500
+pd.options.display.max_rows = 500
 
 from src.manager.EngineManager import EngineManager
 from src.basic.sql_func import sql_read

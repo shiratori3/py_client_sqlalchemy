@@ -6,6 +6,7 @@
 
 ### 基础功能
 
+- 通过脚本实现安装（目前仅支持ipython启动脚本文件，后续考虑支持实现conda环境最小安装包）
 - 通过LogManager管理器管理输出信息流，通过logging.yaml文件进行配置
 - 通过Ignorer管理gitignore文件，避免文件误上传
 - 通过ConfManager管理器管理yaml形式的配置文件

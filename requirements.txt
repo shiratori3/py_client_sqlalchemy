@@ -1,0 +1,9 @@
+matplotlib==3.3.4
+SQLAlchemy==1.4.22
+requests==2.25.1
+xlwings==0.23.0
+numpy==1.19.2
+pandas==1.2.3
+pyexcel==0.5.15
+ipython==7.28.0
+PyYAML==6.0
