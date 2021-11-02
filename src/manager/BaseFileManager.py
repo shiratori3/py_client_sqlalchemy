@@ -17,6 +17,7 @@ from src.manager.LogManager import logmgr  # noqa: E402
 log = logmgr.get_logger(__name__)
 
 import yaml
+import configparser
 from src.basic.input_check import input_checking_list  # noqa: E402
 
 
@@ -43,7 +44,7 @@ class BaseFileManager:
         get_cwdPath(to_str: bool = False) -> Path or str:
             Return Path(BaseFileManager.py).parents[2] as cwdPath
         read_conf_from_file(filepath: Path, encoding: str = '') -> dict or list:
-            Read configuration from a yaml file
+            Read configuration from a file
     """
     def __init__(self, conf_path: Path = cwdPath.joinpath('conf'), conf_filename: str = 'settings.yaml'):
         self._conf_path = Path(conf_path)
@@ -94,7 +95,7 @@ class BaseFileManager:
         if not self.conf_dict['path'].get('confpath'):
             log.info('The configuration missing the session[part][confpath]')
             log.info('Adding with the default value[{0}]'.format(str(cwdPath)))
-            self.conf_dict['path']['confpath'] = cwdPath
+            self.conf_dict['path']['confpath'] = str(cwdPath)
         else:
             if self._conf_path == Path('') or str(self._conf_path) == '.':
                 self._conf_path = cwdPath
@@ -146,16 +147,21 @@ class BaseFileManager:
 
     @staticmethod
     def read_conf_from_file(filepath: Path, encoding: str = '') -> dict or list:
-        """Read configuration from yaml file"""
+        """Read configuration from file"""
         if Path(filepath).exists() and Path(filepath).is_file():
-            if encoding:
-                with open(str(filepath), encoding=encoding) as configfile:
-                    data = yaml.load(configfile, Loader=yaml.Loader)
-                return data
+            if not encoding:
+                encoding = None
+            if Path(filepath).suffix == '.ini':
+                config = configparser.ConfigParser()
+                config.read(str(filepath), encoding=encoding)
+                data = {s: dict(config.items(s)) for s in config.sections()}
             else:
-                with open(str(filepath)) as configfile:
-                    data = yaml.load(configfile, Loader=yaml.Loader)
-                return data
+                with open(str(filepath), encoding=encoding) as configfile:
+                    if Path(filepath).suffix == '.yaml':
+                        data = yaml.load(configfile, Loader=yaml.Loader)
+                    else:
+                        data = configfile.readlines()
+            return data
         else:
             log.error('Error. Invaild filepath[{}] to read conf.'.format(filepath))
             return {}

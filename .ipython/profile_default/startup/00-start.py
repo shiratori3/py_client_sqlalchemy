@@ -4,17 +4,9 @@
 '''
 @File    :   start.py
 @Author  :   Billy Zhou
-@Time    :   2021/08/20
+@Time    :   2021/11/02
 @Desc    :   None
 '''
-
-
-import pandas as pd
-import numpy as np
-from matplotlib import pyplot as plt
-
-pd.options.display.max_columns = 500
-pd.options.display.max_rows = 500
 
 # 让notebook展示的区域更加宽
 from IPython.core.display import display, HTML

@@ -33,20 +33,31 @@ def change_pools(request_mgr: RequestManager, task_conf: Path, encoding: str = '
     )
 
 
-def mark_id_correct(request_mgr: RequestManager, id_list_conf: Path, task_conf: Path, encoding: str = 'utf-8') -> None:
+def mark_id_correct(
+        request_mgr: RequestManager, id_list_conf: Path, task_conf: Path,
+        encoding: str = 'utf-8', recover_suspended: bool = False, mark_correct: bool = True) -> None:
     """mark the status of id in id_list_conf to correct"""
+    # read id_list
     id_list_str = conf.read_conf_from_file(id_list_conf, encoding=encoding)
-    RWID_dict = {'mark_correct': {'itemSubjectId': id_list_str.split(" ")}}
+    RWID_dict = {
+        'mark_correct': {'itemSubjectId': id_list_str.split(" ")},
+        'suspension_recover': {'itemSubjectId': id_list_str.split(" ")},
+    }
     log.debug('RWID_dict: {}'.format(RWID_dict))
+
+    # change the task_vaild in tasks_dict
+    tasks_dict = conf.read_conf_from_file(task_conf, encoding=encoding)
+    tasks_dict['mark_correct']['task_vaild'] = mark_correct
+    tasks_dict['suspension_recover']['task_vaild'] = recover_suspended
 
     result = multi_requests_by_dicts(
         request_mgr,
-        tasks_dict=conf.read_conf_from_file(task_conf, encoding=encoding),
+        tasks_dict=tasks_dict,
         replaces_dict=RWID_dict,
         sleep_time=0.1
     )
-    result_false = [{task_name: response} for task_name, responses in result.items() for response in responses if response['code'] != '200']
-    log.info(f'false result of mark_id_correct: {result_false}')
+    result_false = [{task_name: response} for task_name, responses in result.items() for response in responses if int(response['code']) != 200]
+    log.info(f'false result: {result_false}')
 
 
 def repush_undeleted_ids(request_mgr: RequestManager, task_conf: Path, push_size: int = 500) -> None:
@@ -133,7 +144,7 @@ def get_nums(
 def query_id_list(
         request_mgr: RequestManager, id_list_conf: Path, id_task_conf: Path,
         query_checkresult: bool = False, query_file_records_of_unvaild_id: bool = False,
-        encoding: str = 'utf-8') -> None:
+        encoding: str = 'utf-8', sleep_time: float = 0.3) -> None:
     """read id_list from id_list_conf and query them according to id_task_conf
 
     Args:
@@ -171,7 +182,7 @@ def query_id_list(
     # get the responses
     res_id_list = []
     res_id_cr_list = []
-    responses_dict = multi_requests_by_dicts(request_mgr, query_id_task, replaces_dict=RWID_dict)
+    responses_dict = multi_requests_by_dicts(request_mgr, query_id_task, replaces_dict=RWID_dict, sleep_time=sleep_time)
     log.debug('responses_dict: {}'.format(responses_dict))
     for task_name, task_responses in responses_dict.items():
         if task_name == 'query_id_list':
@@ -233,7 +244,7 @@ def query_id_list(
 
             responses_dict = multi_requests_by_dicts(
                 request_mgr, query_id_task,
-                replaces_dict=file_unvaild_dict, encoding=encoding)
+                replaces_dict=file_unvaild_dict, encoding=encoding, sleep_time=sleep_time)
 
             # get responses
             res_file_list = []
@@ -386,7 +397,7 @@ if __name__ == '__main__':
             query_file_records_of_unvaild_id=True
         )
 
-    if True:
+    if False:
         # test repush_undeleted_ids
         repush_undeleted_ids(
             request_mgr,

@@ -41,18 +41,19 @@ def send_request_with_dict(func):
                     return func(
                         *args, request_method=task_dict['request_method'],
                         request_url=task_dict['request_url'],
+                        request_payloads=task_dict.get('request_payloads', ''),
                         url_type=task_dict['url_type'],
                         task_name=task_dict.get('task_name', ''), **kwargs)
                 else:
                     return func(
                         *args, request_method=task_dict['request_method'],
                         request_url=task_dict['request_url'],
-                        request_payloads=task_dict['request_payloads'],
+                        request_payloads=task_dict.get('request_payloads', ''),
                         url_type=task_dict['url_type'],
                         task_name=task_dict.get('task_name', ''),
                         payloads_encode=task_dict.get('payloads_encode', ''), **kwargs)
             except Exception as e:
-                log.error('An error occurred. {!r}'.format(e.args[-1]))
+                log.error('An error occurred. {!r}'.format(e.args))
                 log.error(f'Failed to send request with a task_dict. The task_dict is: \n{task_dict}')
     return wrapper
 
