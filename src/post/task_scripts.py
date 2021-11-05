@@ -20,10 +20,10 @@ import time
 import pandas as pd
 from typing import List
 from src.manager.main import conf  # noqa: E402
+from src.utils.dataframe import records_to_df  # noqa: E402
+from src.utils.dataframe import df_to_file  # noqa: E402
 from src.post.RequestManager import RequestManager  # noqa: E402
 from src.post.multi_requests import multi_requests_by_dicts  # noqa: E402
-from src.basic.dataframe_func import records_to_df  # noqa: E402
-from src.basic.dataframe_func import df_to_file  # noqa: E402
 
 
 def change_pools(request_mgr: RequestManager, task_conf: Path, encoding: str = 'utf-8') -> None:

@@ -17,11 +17,11 @@ log = logmgr.get_logger(__name__)
 
 import json
 from urllib.parse import quote as urlquote
-from src.basic.input_check import input_default  # noqa: E402
-from src.basic.input_check import input_pwd  # noqa: E402
-from src.basic.input_check import input_checking_list  # noqa: E402
-from src.basic.input_check import input_checking_YN  # noqa: E402
-from src.basic.compare import dict_compare  # noqa: E402
+from src.utils.input_check import input_default  # noqa: E402
+from src.utils.input_check import input_pwd  # noqa: E402
+from src.utils.input_check import input_checking_list  # noqa: E402
+from src.utils.input_check import input_checking_YN  # noqa: E402
+from src.utils.compare import dict_compare  # noqa: E402
 from src.manager.Ignorer import Ignorer  # noqa: E402
 from src.manager.Crypt import Crypt  # noqa: E402
 from src.manager.BaseFileManager import BaseFileManager  # noqa: E402

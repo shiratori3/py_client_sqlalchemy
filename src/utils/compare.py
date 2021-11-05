@@ -19,7 +19,7 @@ log = logmgr.get_logger(__name__)
 import copy
 from typing import Tuple
 from collections.abc import Mapping
-from src.basic.input_check import input_checking_YN, input_checking_list
+from src.utils.input_check import input_checking_YN, input_checking_list
 
 
 def dict_compare(

@@ -17,8 +17,8 @@ from src.manager.LogManager import logmgr  # noqa: E402
 log = logmgr.get_logger(__name__)
 
 from src.manager.BaseFileManager import BaseFileManager  # noqa: E402
-from src.basic.input_check import input_default  # noqa: E402
-from src.basic.input_check import input_checking_YN  # noqa: E402
+from src.utils.input_check import input_default  # noqa: E402
+from src.utils.input_check import input_checking_YN  # noqa: E402
 
 
 class ConfManager(BaseFileManager):
