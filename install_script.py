@@ -16,7 +16,7 @@ from src.manager.LogManager import logmgr
 log = logmgr.get_logger(__name__)
 
 import os
-from src.setup.ipython_scripts import check_settings
+from src.setup.ipython_scripts import check_ipython_settings
 from src.setup.ipython_scripts import files_copy
 from src.setup.conda_check import find_conda_path
 from src.setup.conda_check import add_conda_path
@@ -55,7 +55,7 @@ if __name__ == '__main__':
         startup_folder.mkdir(parents=True)
 
     if True:
-        check_settings(src_folder)
+        check_ipython_settings(src_folder)
 
         fname_list = ['00-start.py', '90-start-client.py', 'settings.yaml']
         files_copy(fname_list, src_folder, startup_folder, force_to_cover=True)

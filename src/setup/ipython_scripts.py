@@ -20,7 +20,7 @@ import shutil
 from src.manager.BaseFileManager import BaseFileManager
 
 
-def check_settings(src_path: Path) -> dict:
+def check_ipython_settings(src_path: Path) -> dict:
     """create and update settings.yaml for 90-start-client.py, and return the dict of settings"""
     ipython_fmgr = BaseFileManager(src_path)
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         startup_folder.mkdir(parents=True)
 
     if True:
-        settings = check_settings(src_folder)
+        settings = check_ipython_settings(src_folder)
         print(f"settings: \n{settings}")
 
     if True:
