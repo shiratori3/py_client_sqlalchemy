@@ -24,7 +24,7 @@ from sqlalchemy import text
 from sqlalchemy import bindparam
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql.elements import TextClause
-from src.basic.dataframe_func import df_to_file
+from src.utils.dataframe import df_to_file
 
 
 def sql_read(script_file: Path or str, encoding='utf8'):

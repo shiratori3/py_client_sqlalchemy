@@ -18,7 +18,7 @@ log = logmgr.get_logger(__name__)
 
 import yaml
 import configparser
-from src.basic.input_check import input_checking_list  # noqa: E402
+from src.utils.input_check import input_checking_list  # noqa: E402
 
 
 class BaseFileManager:

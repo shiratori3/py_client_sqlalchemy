@@ -66,7 +66,7 @@ if __name__ == '__main__':
         if to_count:
             if insert_to_db:
                 from src.manager.EngineManager import EngineManager
-                from src.basic.sql_func import sql_query
+                from src.utils.sql import sql_query
 
                 manager = EngineManager()
                 manager.read_conn_list()

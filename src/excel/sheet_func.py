@@ -20,7 +20,7 @@ import xlwings as xw
 from xlwings import Book
 from xlwings import Sheet
 from typing import List
-from src.excel.utils import search_file_by_type
+from src.utils.excel import search_file_by_type
 from src.excel.app_func import try_expect_stop_refresh
 from src.excel.cell_func import get_height
 

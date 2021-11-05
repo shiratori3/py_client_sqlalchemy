@@ -27,7 +27,7 @@ if __name__ == '__main__':
     try:
         # NotebookApp.notebook_dir has been removed to ServerApp.root_dir
         # NBClassic runs the Jupyter Notebook frontend on the Jupyter Server backend
-        command = 'jupyter nbclassic --ServerApp.root_dir={}'.format(notebook_dir).replace('\\', '/')
+        command = 'conda.bat activate py_sql_client && jupyter nbclassic --ServerApp.root_dir={}'.format(notebook_dir).replace('\\', '/')
         log.debug("command: {}".format(command))
         log.debug("command splited: {}".format(shlex.split(command)))
         proc = Popen(shlex.split(command))
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         log.error("An error occurred. {}".format(e.args))
         log.error("Start notebook from Nbclassic failed")
 
-        command = 'jupyter notebook --notebook-dir={}'.format(notebook_dir).replace('\\', '/')
+        command = 'conda.bat activate py_sql_client && jupyter notebook --notebook-dir={}'.format(notebook_dir).replace('\\', '/')
         log.debug("command: {}".format(command))
         log.debug("command splited: {}".format(shlex.split(command)))
         proc = Popen(shlex.split(command))
