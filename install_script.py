@@ -26,13 +26,18 @@ from src.setup.conda_check import create_conda_env
 
 
 if __name__ == '__main__':
-    # install conda env
+    # init
     usr_folder = Path(os.path.expanduser('~'))
+    scripts_folder = cwdPath.joinpath(r'res\dev\.ipython\profile_default\startup')
+    startup_folder = usr_folder.joinpath(r'.ipython\profile_default\startup')
+    if not startup_folder.exists():
+        startup_folder.mkdir(parents=True)
 
     # find the basepath of conda
     conda_basepath = find_conda_path(folder_keyword='conda')
 
-    if False:
+    # install conda env
+    if True:
         # check and add conda_basepath to sys path
         add_conda_path(conda_basepath)
 
@@ -49,15 +54,8 @@ if __name__ == '__main__':
         add_conda_path(conda_basepath.joinpath('envs\\py_sql_client'))
 
     # install ipython scripts
-    src_folder = cwdPath.joinpath(r'res\dev\.ipython\profile_default\startup')
-    startup_folder = Path(r'C:\Users\{}\.ipython\profile_default\startup'.format(os.getlogin()))
-    if not startup_folder.exists():
-        startup_folder.mkdir(parents=True)
-
     if True:
-        check_ipython_settings(src_folder)
+        check_ipython_settings(scripts_folder)
 
         fname_list = ['00-start.py', '90-start-client.py', 'settings.yaml']
-        files_copy(fname_list, src_folder, startup_folder, force_to_cover=True)
-
-    print('ipython startup installed.')
+        files_copy(fname_list, scripts_folder, startup_folder, force_to_cover=True)
