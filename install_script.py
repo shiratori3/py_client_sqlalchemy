@@ -26,6 +26,11 @@ from src.setup.conda_check import create_conda_env
 
 
 if __name__ == '__main__':
+    # settings
+    force_to_cover_conda_settings = True  # 强制更新conda设置
+    force_to_install_conda_env_if_exists = True  # 覆盖安装py_sql_client环境
+    force_to_cover_ipython_settings = True  # 强制覆盖ipython startup文件
+
     # init
     usr_folder = Path(os.path.expanduser('~'))
     scripts_folder = cwdPath.joinpath(r'res\dev\.ipython\profile_default\startup')
@@ -45,10 +50,11 @@ if __name__ == '__main__':
         check_conda_bat(conda_basepath, add_path=True)
 
         # check and update settings in .condarc file
-        check_conda_settings(usr_folder, force_to_cover=True)
+        check_conda_settings(usr_folder, force_to_cover=force_to_cover_conda_settings)
 
         # check and create conda env named py_sql_client
-        create_conda_env('py_sql_client', cwdPath.joinpath('requirements_conda_py_sql_client_win.yaml'), force_to_install=False)
+        create_conda_env('py_sql_client', cwdPath.joinpath(
+            'requirements_conda_py_sql_client_win64.yaml'), force_to_install=force_to_install_conda_env_if_exists)
 
         # check and add py_sql_client to sys path
         add_conda_path(conda_basepath.joinpath('envs\\py_sql_client'))
@@ -58,4 +64,4 @@ if __name__ == '__main__':
         check_ipython_settings(scripts_folder)
 
         fname_list = ['00-start.py', '90-start-client.py', 'settings.yaml']
-        files_copy(fname_list, scripts_folder, startup_folder, force_to_cover=True)
+        files_copy(fname_list, scripts_folder, startup_folder, force_to_cover=force_to_cover_ipython_settings)

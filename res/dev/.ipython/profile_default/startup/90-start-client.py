@@ -16,7 +16,9 @@ with open(Path(__file__).parent.joinpath('settings.yaml'), 'r', encoding='utf-8'
     data = yaml.load(configfile, Loader=yaml.Loader)
 if 'path_to_add' in data.keys():
     for path_to_add in data['path_to_add']:
-        sys.path.append(path_to_add)  # add the path to your workspace root
+        sys.path.append(str(Path(path_to_add)))  # add the path to your workspace root
+else:
+    sys.path.append(Path(sys.argv[0]).parent)
 
 import pandas as pd
 import numpy as np
