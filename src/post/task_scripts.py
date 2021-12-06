@@ -60,6 +60,34 @@ def mark_id_correct(
     log.info(f'false result: {result_false}')
 
 
+def repush_ids(request_mgr: RequestManager, id_list: list, push_size: int = 500, debug_list = False) -> None:
+    tot = len(id_list)
+    log.info(f"len of id_list: {tot}")
+
+    if not id_list:
+        log.info('No id need to repush')
+    else:
+        push_time = (tot-1) // push_size + 1
+        # repush undeleted ids
+        log.info(f"time need to repush under push_size[{push_size}]: {push_time}")
+        for i in range(push_time):
+            log.info(f"cur repush time: {i + 1}")
+
+            s, e = i * push_size, (i + 1) * push_size if i != push_time - 1 else tot
+            if debug_list:
+                log.info(f"repush slice of id_list[{s}:{e}]: {id_list[s:e]}")
+            else:
+                log.info(f"repush slice of id_list[{s}:{e}]")
+            
+
+            response = request_mgr.send_request(
+                'POST',
+                request_mgr.read_url('urlgenerateGSCWB'),
+                request_payloads=id_list[s:e]
+            )
+            log.info(f'response: {response}')
+
+
 def repush_undeleted_ids(request_mgr: RequestManager, task_conf: Path, push_size: int = 500) -> None:
     """repush undelete ids to delete them"""
     tasks_dict = conf.read_conf_from_file(task_conf)
@@ -75,24 +103,8 @@ def repush_undeleted_ids(request_mgr: RequestManager, task_conf: Path, push_size
                 if response['msg'] == '成功':
                     res_id_list.extend(response['data']['records'])
     id_list = [res['id'] for res in res_id_list]
-    tot = len(id_list)
     log.debug(f"id_list: {id_list}")
-    log.info(f"len of id_list: {tot}")
-
-    if not id_list:
-        log.info('No id need to repush')
-    else:
-        # repush undeleted ids
-        log.info(f"time need to repush under push_size[{push_size}]: {(tot-1) // push_size + 1}")
-        for i in range((tot - 1) // push_size + 1):
-            log.info(f"cur repush time: {i + 1}")
-            log.info(f"the slice of id_list[{i}:{i+500}]: {id_list[i:i + 500]}")
-            response = request_mgr.send_request(
-                'POST',
-                request_mgr.read_url('urlgenerateGSCWB'),
-                request_payloads=id_list[i:i + 500]
-            )
-            log.info(f'response: {response}')
+    repush_ids(request_mgr, id_list, push_size)
 
 
 def get_nums(
@@ -397,9 +409,10 @@ if __name__ == '__main__':
             query_file_records_of_unvaild_id=True
         )
 
-    if False:
-        # test repush_undeleted_ids
-        repush_undeleted_ids(
-            request_mgr,
-            cwdPath.joinpath('conf\\task\\repush_undeleted_id.yaml')
-        )
+    if True:
+        RWID_list_str = conf.read_conf_from_file(
+            cwdPath.joinpath('res\\dev\\test_id_list_query.yaml'))
+        RWID_list = RWID_list_str.split(" ")
+
+        # test repush_ids
+        repush_ids(request_mgr, RWID_list, 5)
